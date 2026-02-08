@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAP MCP Server Architecture</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+            color: #333;
+        }
+        h1 { color: #1a73e8; border-bottom: 3px solid #1a73e8; padding-bottom: 10px; }
+        h2 { color: #34a853; margin-top: 40px; }
+        h3 { color: #ea4335; }
+        .diagram {
+            background: #fff;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            white-space: pre;
+        }
+        .box {
+            background: #e8f0fe;
+            border: 1px solid #1a73e8;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        .box.green { background: #e6f4ea; border-color: #34a853; }
+        .box.orange { background: #fef7e0; border-color: #f9ab00; }
+        .box.red { background: #fce8e6; border-color: #ea4335; }
+        .box.purple { background: #f3e8fd; border-color: #9334e6; }
+        code {
+            background: #f1f3f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        pre {
+            background: #263238;
+            color: #aabbc3;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        pre code { background: none; color: inherit; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: #fff;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th { background: #1a73e8; color: white; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        .status-ok { color: #34a853; font-weight: bold; }
+        .status-fail { color: #ea4335; font-weight: bold; }
+        .status-partial { color: #f9ab00; font-weight: bold; }
+        .arrow { color: #1a73e8; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<h1>SAP MCP Server Architecture</h1>
+
+<h2>The Problem We're Solving</h2>
+
+<div class="box red">
+    <h3>Why Do We Need This?</h3>
+    <p><strong>OAuth2 tokens work for READING but FAIL for WRITING</strong></p>
+    <ul>
+        <li>SAP BTP trial accounts use OAuth2 (client credentials) for API access</li>
+        <li>OAuth2 grants authentication but <strong>not full authorization</strong></li>
+        <li>Write operations fail with: <code>403 - You are not authorized (S_DEVELOP)</code></li>
+        <li>The S_DEVELOP authorization object controls who can modify ABAP code</li>
+    </ul>
+    <p><strong>But Eclipse ADT CAN write!</strong> Because it uses SAML2 authentication that maps to user <code>CB9980003101</code> with the <code>SAP_BR_DEVELOPER</code> role.</p>
+</div>
+
+<h2>Architecture Overview</h2>
+
+<div class="diagram">
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                                    YOUR COMPUTER                                     │
+│                                                                                      │
+│  ┌─────────────┐      ┌─────────────────────┐      ┌─────────────────────────────┐  │
+│  │             │      │                     │      │      WINDOWS (Host)         │  │
+│  │   CLAUDE    │      │   WSL2 (Linux)      │      │                             │  │
+│  │   (AI)      │      │                     │      │  ┌─────────────────────┐    │  │
+│  │             │      │  ┌───────────────┐  │      │  │                     │    │  │
+│  │     │       │      │  │  MCP Server   │  │ HTTP │  │   Eclipse IDE       │    │  │
+│  │     │ MCP   │      │  │  (Node.js)    │──┼──────┼─▶│   + ADT Plugin      │    │  │
+│  │     ▼       │      │  │  Port: stdin  │  │:19456│  │   + Bridge Plugin   │    │  │
+│  │  ┌──────┐   │ MCP  │  └───────────────┘  │      │  │                     │    │  │
+│  │  │Claude│───┼──────┼─▶      │            │      │  └──────────┬──────────┘    │  │
+│  │  │ Code │   │proto │       │            │      │             │               │  │
+│  │  └──────┘   │      │       ▼            │      │             │               │  │
+│  │             │      │  sap-adt-client.js │      │             │ HTTPS         │  │
+│  └─────────────┘      └─────────────────────┘      └─────────────┼───────────────┘  │
+│                                                                  │                  │
+└──────────────────────────────────────────────────────────────────┼──────────────────┘
+                                                                   │
+                                                                   ▼
+                                                    ┌─────────────────────────────┐
+                                                    │   SAP BTP (Cloud)           │
+                                                    │                             │
+                                                    │   ABAP Environment          │
+                                                    │   User: CB9980003101        │
+                                                    │   Role: SAP_BR_DEVELOPER    │
+                                                    │                             │
+                                                    │   ADT REST APIs:            │
+                                                    │   /sap/bc/adt/...           │
+                                                    └─────────────────────────────┘
+</div>
+
+<h2>Component Details</h2>
+
+<h3>1. Claude Code (AI Assistant)</h3>
+<div class="box">
+    <p><strong>Location:</strong> Your terminal</p>
+    <p><strong>Role:</strong> Provides AI assistance for SAP development</p>
+    <p><strong>Communication:</strong> Uses MCP (Model Context Protocol) to call tools</p>
+    <p>When you ask Claude to search SAP code or create a program, it calls MCP tools like <code>sap_search</code>, <code>sap_read_source</code>, <code>sap_create_program</code>.</p>
+</div>
+
+<h3>2. MCP Server (Node.js)</h3>
+<div class="box green">
+    <p><strong>Location:</strong> <code>/home/akiva/personal/sap-mcp-server/</code> (WSL2)</p>
+    <p><strong>Entry Point:</strong> <code>src/index.js</code></p>
+    <p><strong>Main File:</strong> <code>src/sap-adt-client.js</code></p>
+    <p><strong>Role:</strong> Translates MCP tool calls into SAP ADT REST API requests</p>
+
+    <h4>Key Logic in sap-adt-client.js:</h4>
+    <pre><code>// On startup, checks if Eclipse Bridge is available
+async ensureBridgeChecked() {
+    // Try localhost, 127.0.0.1, then WSL gateway IP
+    const hostsToTry = ['localhost', '127.0.0.1', '172.20.208.1'];
+
+    for (const host of hostsToTry) {
+        const resp = await axios.get(`http://${host}:19456/health`);
+        if (resp.data?.status === 'ok') {
+            this.useEclipseBridge = true;  // Use bridge for ALL requests
+            return;
+        }
+    }
+    this.useEclipseBridge = false;  // Fallback to OAuth2 (read-only)
+}</code></pre>
+
+    <h4>Two Operating Modes:</h4>
+    <table>
+        <tr>
+            <th>Mode</th>
+            <th>When Used</th>
+            <th>Capabilities</th>
+        </tr>
+        <tr>
+            <td><strong>Eclipse Bridge</strong></td>
+            <td>Eclipse is running with bridge plugin</td>
+            <td class="status-ok">Full read/write access</td>
+        </tr>
+        <tr>
+            <td><strong>OAuth2 Direct</strong></td>
+            <td>Eclipse not running or bridge unavailable</td>
+            <td class="status-partial">Read-only (writes fail with S_DEVELOP)</td>
+        </tr>
+    </table>
+</div>
+
+<h3>3. Eclipse ADT Bridge Plugin (Java)</h3>
+<div class="box purple">
+    <p><strong>Location:</strong> <code>/home/akiva/personal/sap-mcp-server/eclipse-adt-bridge/</code></p>
+    <p><strong>Deployed To:</strong> <code>C:\Users\akivo\eclipse\java-2025-12\eclipse\dropins\</code></p>
+    <p><strong>JAR Name:</strong> <code>com.sap.adt.mcpbridge_1.0.0.jar</code></p>
+
+    <h4>Plugin Structure:</h4>
+    <pre><code>eclipse-adt-bridge/
+├── META-INF/
+│   └── MANIFEST.MF          # OSGi bundle configuration
+├── plugin.xml               # Eclipse extension point (early startup)
+├── src/com/sap/adt/mcpbridge/
+│   ├── Activator.java       # Bundle lifecycle, starts HTTP server
+│   ├── EarlyStartup.java    # Ensures plugin loads on Eclipse start
+│   ├── BridgeHttpServer.java # HTTP server on port 19456
+│   ├── HealthHandler.java   # GET /health endpoint
+│   ├── ProxyHandler.java    # POST /proxy endpoint
+│   └── AdtConnectionManager.java # Core: executes ADT requests
+└── build.sh                 # Build script for WSL</code></pre>
+
+    <h4>HTTP Server Endpoints:</h4>
+    <table>
+        <tr>
+            <th>Endpoint</th>
+            <th>Method</th>
+            <th>Purpose</th>
+        </tr>
+        <tr>
+            <td><code>/health</code></td>
+            <td>GET</td>
+            <td>Check if bridge is running, returns project status</td>
+        </tr>
+        <tr>
+            <td><code>/proxy</code></td>
+            <td>POST</td>
+            <td>Proxy SAP ADT requests through Eclipse's session</td>
+        </tr>
+    </table>
+
+    <h4>Why This Works:</h4>
+    <p>When you open an ABAP project in Eclipse:</p>
+    <ol>
+        <li>Eclipse authenticates via <strong>SAML2</strong> to SAP BTP</li>
+        <li>SAP maps this to user <code>CB9980003101</code> with full developer permissions</li>
+        <li>Eclipse maintains an <strong>authenticated HTTP session</strong> with cookies</li>
+        <li>Our bridge plugin uses this <strong>same session</strong> for API requests</li>
+        <li>Result: Bridge requests have the same permissions as Eclipse UI!</li>
+    </ol>
+</div>
+
+<h3>4. SAP BTP ABAP Environment</h3>
+<div class="box orange">
+    <p><strong>URL:</strong> <code>https://[tenant].abap.us10.hana.ondemand.com</code></p>
+    <p><strong>User:</strong> <code>CB9980003101</code></p>
+    <p><strong>Role:</strong> <code>SAP_BR_DEVELOPER</code></p>
+
+    <h4>ADT REST API Examples:</h4>
+    <table>
+        <tr>
+            <th>Operation</th>
+            <th>Endpoint</th>
+            <th>Method</th>
+        </tr>
+        <tr>
+            <td>Search objects</td>
+            <td><code>/sap/bc/adt/repository/informationsystem/search</code></td>
+            <td>GET</td>
+        </tr>
+        <tr>
+            <td>Read class source</td>
+            <td><code>/sap/bc/adt/oo/classes/{name}/source/main</code></td>
+            <td>GET</td>
+        </tr>
+        <tr>
+            <td>Lock object</td>
+            <td><code>/sap/bc/adt/oo/classes/{name}?_action=LOCK</code></td>
+            <td>POST</td>
+        </tr>
+        <tr>
+            <td>Write source</td>
+            <td><code>/sap/bc/adt/oo/classes/{name}/source/main</code></td>
+            <td>PUT</td>
+        </tr>
+        <tr>
+            <td>Unlock object</td>
+            <td><code>/sap/bc/adt/oo/classes/{name}?_action=UNLOCK</code></td>
+            <td>POST</td>
+        </tr>
+        <tr>
+            <td>Create program</td>
+            <td><code>/sap/bc/adt/programs/programs</code></td>
+            <td>POST</td>
+        </tr>
+    </table>
+</div>
+
+<h2>Request Flow (Detailed)</h2>
+
+<div class="diagram">
+Example: Claude asks to read class ZCL_TEST
+
+1. Claude Code ──MCP──▶ MCP Server
+   Tool call: sap_read_source("class", "ZCL_TEST")
+
+2. MCP Server checks: Is Eclipse Bridge available?
+   GET http://172.20.208.1:19456/health
+   Response: {"status":"ok","project":"connected:TRL_EN"}
+   ✓ Bridge available!
+
+3. MCP Server ──HTTP──▶ Eclipse Bridge
+   POST http://172.20.208.1:19456/proxy
+   Body: {
+     "method": "GET",
+     "path": "/sap/bc/adt/oo/classes/zcl_test/source/main",
+     "headers": {"Accept": "text/plain"}
+   }
+
+4. Eclipse Bridge (AdtConnectionManager.java):
+   a) Gets Eclipse's authenticated session
+   b) Creates IRestResource with that session
+   c) Executes GET request
+   d) Returns response
+
+5. Eclipse ──HTTPS──▶ SAP BTP
+   GET https://[tenant].abap.us10.hana.ondemand.com/sap/bc/adt/oo/classes/zcl_test/source/main
+   Headers: Session cookies, CSRF token (managed by Eclipse)
+
+6. SAP BTP returns ABAP source code
+
+7. Response flows back:
+   SAP ──▶ Eclipse ──▶ Bridge ──▶ MCP Server ──▶ Claude
+</div>
+
+<h2>Network Configuration (WSL2)</h2>
+
+<div class="box">
+    <h3>The Challenge</h3>
+    <p>WSL2 runs in a separate network namespace from Windows. <code>localhost</code> in WSL2 does NOT reach Windows!</p>
+
+    <h3>The Solution</h3>
+    <table>
+        <tr>
+            <th>Component</th>
+            <th>Runs On</th>
+            <th>Binds To</th>
+        </tr>
+        <tr>
+            <td>MCP Server</td>
+            <td>WSL2 (Linux)</td>
+            <td>stdin (MCP protocol)</td>
+        </tr>
+        <tr>
+            <td>Eclipse + Bridge</td>
+            <td>Windows</td>
+            <td><code>0.0.0.0:19456</code> (all interfaces)</td>
+        </tr>
+    </table>
+
+    <h3>How MCP Server Finds Eclipse</h3>
+    <pre><code>// sap-adt-client.js tries these hosts in order:
+const hostsToTry = [
+    'localhost',           // Works if WSL1 or port forwarding
+    '127.0.0.1',          // Same as localhost
+    '172.20.208.1'        // WSL2 gateway IP (Windows host)
+];
+
+// Gateway IP is discovered from:
+// 1. /etc/resolv.conf (nameserver line)
+// 2. ip route (default gateway)</code></pre>
+
+    <p><strong>Current Gateway IP:</strong> <code>172.20.208.1</code></p>
+    <p><strong>Test Command:</strong> <code>curl http://172.20.208.1:19456/health</code></p>
+</div>
+
+<h2>Current Status</h2>
+
+<table>
+    <tr>
+        <th>Feature</th>
+        <th>Status</th>
+        <th>Notes</th>
+    </tr>
+    <tr>
+        <td>Bridge Detection</td>
+        <td class="status-ok">Working</td>
+        <td>MCP server finds Eclipse via gateway IP</td>
+    </tr>
+    <tr>
+        <td>Health Endpoint</td>
+        <td class="status-ok">Working</td>
+        <td>Returns project connection status</td>
+    </tr>
+    <tr>
+        <td>Read Operations (GET)</td>
+        <td class="status-ok">Working</td>
+        <td>Can read source code, search objects</td>
+    </tr>
+    <tr>
+        <td>Lock/Unlock Objects</td>
+        <td class="status-ok">Working</td>
+        <td>Can lock classes for editing</td>
+    </tr>
+    <tr>
+        <td>Create Objects (POST)</td>
+        <td class="status-fail">Failing</td>
+        <td>S_DEVELOP authorization error</td>
+    </tr>
+    <tr>
+        <td>Write Source (PUT)</td>
+        <td class="status-fail">Failing</td>
+        <td>Reflection issues with IRestResource.put()</td>
+    </tr>
+</table>
+
+<h2>The Remaining Challenge</h2>
+
+<div class="box red">
+    <h3>Problem: PUT Method Not Exposed</h3>
+    <p>Eclipse's <code>IRestResource</code> interface exposes:</p>
+    <ul>
+        <li><code>get()</code> - for reading</li>
+        <li><code>post()</code> - for creating/actions</li>
+        <li><code>delete()</code> - for deleting</li>
+        <li><strong>NOT</strong> <code>put()</code> - needed for updating source code!</li>
+    </ul>
+
+    <h3>What We've Tried</h3>
+    <ol>
+        <li><strong>X-HTTP-Method-Override header:</strong> SAP doesn't recognize it (returns 405)</li>
+        <li><strong>Reflection to call internal put():</strong> Argument type mismatch errors</li>
+    </ol>
+
+    <h3>Next Steps</h3>
+    <ul>
+        <li>Find the correct method signature for internal PUT</li>
+        <li>Or: Use Apache HttpClient directly with Eclipse's session cookies</li>
+        <li>Or: Find alternative ADT API that accepts POST for updates</li>
+    </ul>
+</div>
+
+<h2>File Locations Summary</h2>
+
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Path</th>
+    </tr>
+    <tr>
+        <td>MCP Server</td>
+        <td><code>/home/akiva/personal/sap-mcp-server/</code></td>
+    </tr>
+    <tr>
+        <td>SAP ADT Client</td>
+        <td><code>/home/akiva/personal/sap-mcp-server/src/sap-adt-client.js</code></td>
+    </tr>
+    <tr>
+        <td>Bridge Plugin Source</td>
+        <td><code>/home/akiva/personal/sap-mcp-server/eclipse-adt-bridge/</code></td>
+    </tr>
+    <tr>
+        <td>Bridge Plugin JAR</td>
+        <td><code>C:\Users\akivo\eclipse\java-2025-12\eclipse\dropins\com.sap.adt.mcpbridge_1.0.0.jar</code></td>
+    </tr>
+    <tr>
+        <td>Eclipse Installation</td>
+        <td><code>C:\Users\akivo\eclipse\java-2025-12\eclipse\</code></td>
+    </tr>
+    <tr>
+        <td>Eclipse p2 Plugins</td>
+        <td><code>C:\Users\akivo\.p2\pool\plugins\</code></td>
+    </tr>
+</table>
+
+<h2>Build & Deploy</h2>
+
+<pre><code># From WSL2:
+cd /home/akiva/personal/sap-mcp-server/eclipse-adt-bridge
+bash build.sh
+
+# This will:
+# 1. Compile Java sources using JDK 21
+# 2. Package as OSGi bundle JAR
+# 3. Copy to Eclipse dropins folder
+
+# Then restart Eclipse to load the new plugin
+# Test with:
+curl http://172.20.208.1:19456/health</code></pre>
+
+<hr>
+<p><em>Last updated: 2026-02-05</em></p>
+
+</body>
+</html>

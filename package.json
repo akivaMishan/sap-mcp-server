@@ -1,0 +1,27 @@
+{
+  "name": "sap-adt-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP Server for SAP ADT (ABAP Development Tools) - Access SAP ABAP systems via AI assistants",
+  "main": "src/index.js",
+  "bin": {
+    "sap-adt-mcp": "./src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "sap",
+    "abap",
+    "adt",
+    "ai"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.3",
+    "axios": "^1.13.4",
+    "dotenv": "^17.2.3",
+    "xml2js": "^0.6.2"
+  }
+}
