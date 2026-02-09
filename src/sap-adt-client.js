@@ -12,7 +12,7 @@ class SapAdtClient {
 
     loadConfig() {
         // Load environment variables
-        require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+        require('dotenv').config({ path: path.join(__dirname, '..', '.env'), quiet: true });
 
         this.baseUrl = process.env.SAP_ADT_URL || '';
     }
@@ -22,6 +22,20 @@ class SapAdtClient {
     async ensureBridgeChecked() {
         if (this.useEclipseBridge !== null) {
             return this.useEclipseBridge;
+        }
+
+        // If BRIDGE_URL is set, use it directly (skip auto-detection)
+        if (process.env.BRIDGE_URL) {
+            const url = process.env.BRIDGE_URL.replace(/\/+$/, '');
+            try {
+                const resp = await axios.get(`${url}/health`, { timeout: 2000 });
+                if (resp.data?.status === 'ok') {
+                    this.eclipseBridgeUrl = url;
+                    this.useEclipseBridge = true;
+                    console.error(`[MCP] Eclipse ADT bridge detected at ${url} (from BRIDGE_URL)`);
+                    return true;
+                }
+            } catch { /* fall through to auto-detection */ }
         }
 
         // Try multiple hosts: localhost first, then WSL gateway (for WSL2 -> Windows)
