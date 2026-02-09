@@ -59,8 +59,37 @@ Build requires JDK 21+ and Eclipse ADT plugin JARs from the p2 pool (`~/.p2/pool
 
 The `.env` file uses:
 - `SAP_ADT_URL` — SAP BTP ABAP Environment URL (used for display in connection info)
+- `BRIDGE_URL` — (optional) Eclipse ADT Bridge URL. If set, skips auto-detection and connects directly. Example: `http://localhost:19456`. Useful if the bridge runs on a non-default host/port.
 
 The Eclipse ADT Bridge must be running for the server to function. See the health check command above.
+
+## Running on Windows with Claude Desktop
+
+The MCP server can run natively on Windows (same PC as Eclipse), which is simpler than the WSL2 setup since `localhost` reaches Eclipse directly.
+
+### Setup
+
+1. Install Node.js v18+ on Windows (from nodejs.org)
+2. Copy this project to a Windows folder (e.g., `C:\sap-mcp-server\`)
+3. Run `npm install` in that folder
+4. Create/copy `.env` with `SAP_ADT_URL` value
+
+### Claude Desktop Configuration
+
+Add to `%APPDATA%\Claude\claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "sap-adt": {
+      "command": "node",
+      "args": ["C:\\sap-mcp-server\\src\\index.js"]
+    }
+  }
+}
+```
+
+Restart Claude Desktop. The SAP tools will appear in Claude's tool list. Ensure Eclipse is running with the ADT Bridge plugin before using any SAP tools.
 
 ## Key Patterns
 
