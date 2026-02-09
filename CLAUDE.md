@@ -34,7 +34,7 @@ The server requires the Eclipse ADT Bridge plugin running on port 19456. All req
 
 Registers MCP tools: `sap_search`, `sap_read_source`, `sap_get_package`, `sap_get_object_info`, `sap_check_connection`, `sap_create_class`, `sap_create_program`. Each tool delegates to `SapAdtClient`.
 
-**Write operations:** `sap_create_class` is an upsert — it tries to POST-create the class first. If it already exists (409/403), it falls back to updating the source code (lock → PUT → activate → unlock). We avoid a GET existence check because the bridge's enqueue session auto-locks objects on any access. `sap_create_program` may fail on BTP trial accounts due to `S_DEVELOP` restrictions on program objects.
+**Write operations:** `sap_create_class` is an upsert — it tries to POST-create the class first. If it already exists (SAP returns 400 with `ExceptionResourceAlreadyExists`), it falls back to updating the source code (lock → PUT → unlock → activate). The creation XML includes `adtcore:abapLanguageVersion="cloudDevelopment"` which is required on BTP trial (without it, `S_ABPLNGVS` auth check fails). Default package is `Z_AI_TRIAL` since `$TMP` doesn't support cloud language version. We avoid a GET existence check because the bridge's enqueue session auto-locks objects on any access. Activation must happen after unlock — SAP rejects activation with 403 "currently editing" if the object is still locked. `sap_create_program` may fail on BTP trial accounts due to `S_DEVELOP` restrictions on program objects.
 
 ### SAP ADT Client (`src/sap-adt-client.js`)
 
@@ -70,6 +70,9 @@ The Eclipse ADT Bridge must be running for the server to function. See the healt
 - The bridge handles CSRF tokens internally.
 - **Lock handles** must be passed as query parameters (`params`), not as headers. Eclipse's `IRestResource.put()` does not forward custom headers like `X-sap-adt-lockhandle`.
 - **Bridge session strategy**: GET requests use stateless sessions (avoids accidental auto-locking). POST/PUT/DELETE use enqueue sessions (shared lock context for LOCK → PUT → UNLOCK sequences). Enqueue sessions auto-lock any object accessed via them, so avoid using them for read-only checks.
+- **BTP trial requires `abapLanguageVersion="cloudDevelopment"`** in class creation XML. Without it, the `S_ABPLNGVS` auth check fails with 403. The `$TMP` package does not support cloud language version — use `Z_AI_TRIAL` instead.
+- **SAP returns 400 (not 409) for duplicate objects**, with exception type `ExceptionResourceAlreadyExists`. Do not treat 403 as "already exists" — that indicates a real authorization error.
+- **Unlock before activate.** Activation POST fails with 403 "currently editing" if the object is still locked. Correct write sequence: Lock → PUT → Unlock → Activate.
 
 ## WSL2 Networking
 
