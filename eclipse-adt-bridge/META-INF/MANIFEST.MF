@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Eclipse ADT Bridge for MCP
 Bundle-SymbolicName: io.github.akivamishan.adtbridge;singleton:=true
-Bundle-Version: 1.0.0
+Bundle-Version: 1.0.1
 Bundle-Activator: io.github.akivamishan.adtbridge.Activator
 Bundle-ActivationPolicy: lazy
 Require-Bundle: org.eclipse.core.runtime,
@@ -13,4 +13,4 @@ Require-Bundle: org.eclipse.core.runtime,
  com.sap.adt.destinations,
  com.sap.adt.destinations.model,
  com.google.gson
-Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=21))"
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=11))"

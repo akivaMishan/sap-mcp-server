@@ -38,7 +38,7 @@ jobs:
 
       - name: Verify pre-built plugin JAR exists
         run: |
-          JAR="eclipse-adt-bridge/build/release/io.github.akivamishan.adtbridge_1.0.0.jar"
+          JAR="eclipse-adt-bridge/build/release/io.github.akivamishan.adtbridge_1.0.1.jar"
           if [ ! -f "$JAR" ]; then
             echo "ERROR: Pre-built plugin JAR not found at $JAR"
             echo "Build locally with build.sh and commit the JAR to build/release/"

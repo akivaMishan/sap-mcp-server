@@ -29,7 +29,7 @@ public class HealthHandler implements HttpHandler {
         JsonObject response = new JsonObject();
         response.addProperty("status", "ok");
         response.addProperty("plugin", "io.github.akivamishan.adtbridge");
-        response.addProperty("version", "1.0.0");
+        response.addProperty("version", "1.0.1");
 
         // Check if we can find an ADT project
         AdtConnectionManager connMgr = AdtConnectionManager.getInstance();

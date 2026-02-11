@@ -11,7 +11,7 @@ P2_POOL="/mnt/c/Users/akivo/.p2/pool/plugins"
 
 # Output
 OUTPUT_DIR="$SCRIPT_DIR/build"
-JAR_NAME="io.github.akivamishan.adtbridge_1.0.0.jar"
+JAR_NAME="io.github.akivamishan.adtbridge_1.0.1.jar"
 
 # Detect if javac is Windows-side (.exe) — if so we need Windows paths
 WINDOWS_JAVAC=false
@@ -21,13 +21,13 @@ wslpath_to_win() {
     wslpath -w "$1"
 }
 
-# Find javac - prefer WSL-native JDK 21, then Windows JDK
+# Find javac - prefer WSL-native JDK 11+, then Windows JDK
 find_javac() {
-    # Check WSL-native JDK 21
+    # Check WSL-native JDK 11+
     if command -v javac &>/dev/null; then
         local ver
         ver=$(javac -version 2>&1 | grep -oP '\d+' | head -1)
-        if [ "$ver" -ge 21 ] 2>/dev/null; then
+        if [ "$ver" -ge 11 ] 2>/dev/null; then
             echo "javac"
             return
         fi
@@ -44,9 +44,9 @@ find_javac() {
         return
     fi
 
-    # Check Adoptium JDK 21+
+    # Check Adoptium JDK 11+
     local adoptium
-    for adoptium in /mnt/c/Program\ Files/Eclipse\ Adoptium/jdk-2*/bin/javac.exe; do
+    for adoptium in /mnt/c/Program\ Files/Eclipse\ Adoptium/jdk-*/bin/javac.exe; do
         if [ -f "$adoptium" ]; then
             echo "$adoptium"
             return
@@ -63,10 +63,10 @@ if [[ "$JAVAC" == *.exe ]]; then
     WINDOWS_JAVAC=true
 fi
 if [ -z "$JAVAC" ]; then
-    echo "ERROR: No JDK 21+ javac found."
+    echo "ERROR: No JDK 11+ javac found."
     echo ""
-    echo "Option 1 (recommended): Install JDK 21 in WSL:"
-    echo "  sudo apt install openjdk-21-jdk"
+    echo "Option 1 (recommended): Install JDK 11+ in WSL:"
+    echo "  sudo apt install openjdk-11-jdk"
     echo ""
     echo "Option 2: Eclipse JustJ should be at:"
     echo "  $P2_POOL/org.eclipse.justj.openjdk.hotspot.jre.full.win32.x86_64_*/jre/bin/javac.exe"
@@ -168,15 +168,15 @@ if [ "$WINDOWS_JAVAC" = true ]; then
     echo ""
     echo "Invoking Windows javac..."
     "$JAVAC" \
-        -source 21 \
-        -target 21 \
+        -source 11 \
+        -target 11 \
         -classpath "$CP" \
         -d "$WIN_OUTPUT" \
         "@$(wslpath_to_win "$SRCLIST")"
 else
     "$JAVAC" \
-        -source 21 \
-        -target 21 \
+        -source 11 \
+        -target 11 \
         -classpath "$CP" \
         -d "$OUTPUT_DIR/classes" \
         $SOURCES

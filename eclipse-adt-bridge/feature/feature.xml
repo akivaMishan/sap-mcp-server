@@ -2,7 +2,7 @@
 <feature
       id="io.github.akivamishan.adtbridge.feature"
       label="Eclipse ADT Bridge for MCP"
-      version="1.0.0"
+      version="1.0.1"
       provider-name="Akiva Mishan">
 
    <description>
@@ -50,7 +50,7 @@
          id="io.github.akivamishan.adtbridge"
          download-size="0"
          install-size="0"
-         version="1.0.0"
+         version="1.0.1"
          unpack="false"/>
 
 </feature>

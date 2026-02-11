@@ -13,7 +13,7 @@ cd "$SCRIPT_DIR"
 
 PLUGIN_ID="io.github.akivamishan.adtbridge"
 FEATURE_ID="io.github.akivamishan.adtbridge.feature"
-VERSION="1.0.0"
+VERSION="1.0.1"
 
 PLUGIN_JAR="build/release/${PLUGIN_ID}_${VERSION}.jar"
 FEATURE_DIR="feature"
@@ -119,9 +119,9 @@ if grep -qi microsoft /proc/version 2>/dev/null; then
         # Find java — prefer WSL java, fall back to Windows
         JAVA_CMD="java"
         if ! command -v java &>/dev/null; then
-            JAVA_CMD=$(ls /mnt/c/Program\ Files/Eclipse\ Adoptium/jdk-2*/bin/java.exe 2>/dev/null | head -1)
+            JAVA_CMD=$(ls /mnt/c/Program\ Files/Eclipse\ Adoptium/jdk-*/bin/java.exe 2>/dev/null | head -1)
             if [ -z "$JAVA_CMD" ]; then
-                echo "ERROR: No java found. Install JDK 21+ in WSL (sudo apt install openjdk-21-jdk)"
+                echo "ERROR: No java found. Install JDK 11+ in WSL (sudo apt install openjdk-11-jdk)"
                 exit 1
             fi
         fi
@@ -180,7 +180,7 @@ cat > "$OUTPUT_DIR/index.html" << 'HTMLEOF'
 </head>
 <body>
     <h1>Eclipse ADT Bridge – p2 Update Site</h1>
-    <p>This is an Eclipse p2 repository for the <strong>ADT Bridge</strong> plugin (v1.0.0), which runs an HTTP bridge inside Eclipse to expose SAP ADT APIs to external tools.</p>
+    <p>This is an Eclipse p2 repository for the <strong>ADT Bridge</strong> plugin (v1.0.1), which runs an HTTP bridge inside Eclipse to expose SAP ADT APIs to external tools.</p>
     <h2>Installation</h2>
     <ol>
         <li>In Eclipse, go to <strong>Help &gt; Install New Software…</strong></li>
