@@ -202,8 +202,8 @@ async ensureBridgeChecked() {
 <h3>3. Eclipse ADT Bridge Plugin (Java)</h3>
 <div class="box purple">
     <p><strong>Location:</strong> <code>/home/akiva/personal/sap-mcp-server/eclipse-adt-bridge/</code></p>
-    <p><strong>Deployed To:</strong> <code>C:\Users\akivo\eclipse\java-2025-12\eclipse\dropins\</code></p>
-    <p><strong>JAR Name:</strong> <code>io.github.akivamishan.adtbridge_1.0.0.jar</code></p>
+    <p><strong>Install via:</strong> p2 update site (<code>https://akivamishan.github.io/sap-mcp-server/</code>) or manual JAR copy</p>
+    <p><strong>JAR Name:</strong> <code>io.github.akivamishan.adtbridge_1.0.1.jar</code></p>
 
     <h4>Complete File Tree</h4>
     <pre><code>eclipse-adt-bridge/
@@ -218,10 +218,14 @@ async ensureBridgeChecked() {
 &#x2502;   &#x251C;&#x2500;&#x2500; HealthHandler.java       # GET /health endpoint
 &#x2502;   &#x251C;&#x2500;&#x2500; ProxyHandler.java        # POST /proxy endpoint
 &#x2502;   &#x2514;&#x2500;&#x2500; AdtConnectionManager.java # Core: finds ADT project, executes requests
+&#x251C;&#x2500;&#x2500; feature/
+&#x2502;   &#x2514;&#x2500;&#x2500; feature.xml              # p2 feature definition
+&#x251C;&#x2500;&#x2500; build-p2.sh                  # p2 repository builder (used by CI)
 &#x2514;&#x2500;&#x2500; build/                       # Build output (generated)
     &#x251C;&#x2500;&#x2500; classes/                 # Compiled .class files + copied metadata
     &#x251C;&#x2500;&#x2500; sources.txt              # Source file list (for Windows javac)
-    &#x2514;&#x2500;&#x2500; io.github.akivamishan.adtbridge_1.0.0.jar  # Deployable plugin JAR (~15KB)</code></pre>
+    &#x251C;&#x2500;&#x2500; release/                 # Pre-built JAR (committed for CI)
+    &#x2514;&#x2500;&#x2500; io.github.akivamishan.adtbridge_1.0.1.jar  # Deployable plugin JAR (~15KB)</code></pre>
 
     <!-- ═══════════ Java Source Files ═══════════ -->
 
@@ -304,7 +308,7 @@ async ensureBridgeChecked() {
 Bundle-ManifestVersion: 2
 Bundle-Name: Eclipse ADT Bridge for MCP
 Bundle-SymbolicName: io.github.akivamishan.adtbridge;singleton:=true
-Bundle-Version: 1.0.0
+Bundle-Version: 1.0.1
 Bundle-Activator: io.github.akivamishan.adtbridge.Activator
 Bundle-ActivationPolicy: lazy
 Require-Bundle: org.eclipse.core.runtime,
@@ -315,7 +319,7 @@ Require-Bundle: org.eclipse.core.runtime,
  com.sap.adt.destinations,
  com.sap.adt.destinations.model,
  com.google.gson
-Require-Capability: osgi.ee;filter:="(&amp;(osgi.ee=JavaSE)(version=21))"</code></pre>
+Require-Capability: osgi.ee;filter:="(&amp;(osgi.ee=JavaSE)(version=11))"</code></pre>
 
     <p>Key declarations:</p>
     <ul>
@@ -323,7 +327,7 @@ Require-Capability: osgi.ee;filter:="(&amp;(osgi.ee=JavaSE)(version=21))"</code>
         <li><code>Bundle-Activator</code> &mdash; points to <code>Activator</code> class for lifecycle callbacks</li>
         <li><code>Bundle-ActivationPolicy: lazy</code> &mdash; bundle is loaded on demand (until <code>EarlyStartup</code> forces it)</li>
         <li><code>Require-Bundle</code> &mdash; 8 dependencies: Eclipse core (3), SAP ADT (4), Google Gson (1)</li>
-        <li><code>Require-Capability</code> &mdash; enforces JavaSE 21+</li>
+        <li><code>Require-Capability</code> &mdash; enforces JavaSE 11+ (kept low so the bundle resolves on any modern JDK)</li>
     </ul>
 
     <p><strong>plugin.xml</strong> &mdash; Eclipse extension point registration:</p>
@@ -344,7 +348,7 @@ Require-Capability: osgi.ee;filter:="(&amp;(osgi.ee=JavaSE)(version=21))"</code>
 Eclipse starts
     &#x2502;
     &#x25BC;
-1. OSGi discovers JAR in dropins/
+1. OSGi discovers JAR (installed via p2 or dropins/)
     &#x2502;
     &#x25BC;
 2. Reads MANIFEST.MF &rarr; registers bundle (lazy activation)
@@ -397,7 +401,7 @@ Eclipse starts
 
     <div class="step">
         <strong>Step 1: JDK Detection</strong><br>
-        Prefers WSL-native JDK 21+ (<code>javac</code> on PATH). Falls back to Windows-side JDK: Eclipse JustJ (<code>org.eclipse.justj.openjdk.hotspot.jre.full.win32.x86_64_*/jre/bin/javac.exe</code>) or Eclipse Adoptium (<code>C:\Program Files\Eclipse Adoptium\jdk-2*\bin\javac.exe</code>). Sets <code>WINDOWS_JAVAC=true</code> if using a Windows JDK (affects path conversion and classpath separators).
+        Prefers WSL-native JDK 11+ (<code>javac</code> on PATH). Falls back to Windows-side JDK: Eclipse JustJ (<code>org.eclipse.justj.openjdk.hotspot.jre.full.win32.x86_64_*/jre/bin/javac.exe</code>) or Eclipse Adoptium (<code>C:\Program Files\Eclipse Adoptium\jdk-2*\bin\javac.exe</code>). Sets <code>WINDOWS_JAVAC=true</code> if using a Windows JDK (affects path conversion and classpath separators).
     </div>
 
     <div class="step">
@@ -407,17 +411,17 @@ Eclipse starts
 
     <div class="step">
         <strong>Step 3: Compilation</strong><br>
-        <code>javac -source 21 -target 21</code> compiles all 6 <code>.java</code> files to <code>build/classes/</code>. For Windows javac, source paths are converted to Windows format via <code>wslpath -w</code> and passed through a <code>@sources.txt</code> argfile.
+        <code>javac -source 11 -target 11</code> compiles all 6 <code>.java</code> files to <code>build/classes/</code>. For Windows javac, source paths are converted to Windows format via <code>wslpath -w</code> and passed through a <code>@sources.txt</code> argfile.
     </div>
 
     <div class="step">
         <strong>Step 4: Packaging</strong><br>
-        Copies <code>META-INF/MANIFEST.MF</code> and <code>plugin.xml</code> into the classes directory. Creates <code>io.github.akivamishan.adtbridge_1.0.0.jar</code> using <code>jar cfm</code> (with fallbacks to <code>zip</code> or <code>jar.exe</code>).
+        Copies <code>META-INF/MANIFEST.MF</code> and <code>plugin.xml</code> into the classes directory. Creates <code>io.github.akivamishan.adtbridge_1.0.1.jar</code> using <code>jar cfm</code> (with fallbacks to <code>zip</code> or <code>jar.exe</code>).
     </div>
 
     <div class="step">
-        <strong>Step 5: Deployment</strong><br>
-        Copies the JAR to Eclipse's <code>dropins/</code> folder: <code>C:\Users\akivo\eclipse\java-2025-12\eclipse\dropins\</code>
+        <strong>Step 5: Stage for CI</strong><br>
+        Copy the JAR to <code>build/release/</code> and commit. This pre-built JAR is the input for the GitHub Actions workflow that builds the p2 update site.
     </div>
 
     <div class="step">
@@ -477,7 +481,7 @@ Eclipse starts
             <td>8 class files: 6 main classes + <code>AdtConnectionManager$ProxyResponse</code> (inner class) + <code>AdtConnectionManager$1</code> (anonymous <code>IRestResourceResponseFilter</code>)</td>
         </tr>
         <tr>
-            <td><code>build/io.github.akivamishan.adtbridge_1.0.0.jar</code></td>
+            <td><code>build/io.github.akivamishan.adtbridge_1.0.1.jar</code></td>
             <td>Deployable OSGi plugin JAR (~15KB). Contains all class files, <code>META-INF/MANIFEST.MF</code>, and <code>plugin.xml</code>.</td>
         </tr>
         <tr>
@@ -486,7 +490,7 @@ Eclipse starts
         </tr>
     </table>
 
-    <p><strong>Deployment location:</strong> <code>C:\Users\akivo\eclipse\java-2025-12\eclipse\dropins\io.github.akivamishan.adtbridge_1.0.0.jar</code></p>
+    <p><strong>Install from:</strong> p2 update site at <code>https://akivamishan.github.io/sap-mcp-server/</code>, or copy JAR from <code>eclipse-adt-bridge/build/release/</code> to Eclipse's <code>dropins/</code> folder.</p>
 </div>
 
 <h3>4. SAP BTP ABAP Environment</h3>
@@ -878,8 +882,12 @@ const hostsToTry = ['localhost', '127.0.0.1'];
         <td><code>/home/akiva/personal/sap-mcp-server/eclipse-adt-bridge/</code></td>
     </tr>
     <tr>
-        <td>Bridge Plugin JAR</td>
-        <td><code>C:\Users\akivo\eclipse\java-2025-12\eclipse\dropins\io.github.akivamishan.adtbridge_1.0.0.jar</code></td>
+        <td>Bridge Plugin JAR (pre-built)</td>
+        <td><code>/home/akiva/personal/sap-mcp-server/eclipse-adt-bridge/build/release/</code></td>
+    </tr>
+    <tr>
+        <td>p2 Update Site</td>
+        <td><code>https://akivamishan.github.io/sap-mcp-server/</code></td>
     </tr>
     <tr>
         <td>Eclipse Installation</td>
@@ -891,23 +899,85 @@ const hostsToTry = ['localhost', '127.0.0.1'];
     </tr>
 </table>
 
-<h2>Build & Deploy</h2>
+<h2>Build Pipeline &amp; Distribution</h2>
 
-<pre><code># From WSL2:
-cd /home/akiva/personal/sap-mcp-server/eclipse-adt-bridge
-bash build.sh
+<div class="box green">
+    <h3>Why the JAR Is Built Locally</h3>
+    <p>SAP ADT plugin JARs (e.g., <code>com.sap.adt.communication</code>) are proprietary and only available in a local Eclipse installation's p2 pool (<code>~/.p2/pool/plugins/</code>). CI runners don't have them, so the plugin must be compiled locally and the resulting JAR committed to the repository.</p>
+</div>
 
-# This will:
-# 1. Compile Java sources using JDK 21
-# 2. Package as OSGi bundle JAR
-# 3. Copy to Eclipse dropins folder
+<div class="step">
+    <strong>1. Local Build</strong><br>
+    <code>bash eclipse-adt-bridge/build.sh</code> compiles Java sources against Eclipse ADT JARs and produces an OSGi bundle JAR.
+</div>
 
-# Then restart Eclipse to load the new plugin
-# Test with:
+<div class="step">
+    <strong>2. Commit Pre-built JAR</strong><br>
+    Copy the JAR to <code>eclipse-adt-bridge/build/release/</code> and commit. This is the CI input.
+</div>
+
+<div class="step">
+    <strong>3. GitHub Actions</strong><br>
+    A <code>v*</code> tag push or manual workflow dispatch triggers <code>.github/workflows/build-update-site.yml</code>. The workflow downloads a headless Eclipse SDK, runs <code>build-p2.sh</code> with the pre-built JAR, and produces a p2 repository.
+</div>
+
+<div class="step">
+    <strong>4. p2 Update Site Output</strong><br>
+    The p2 repository contains: <code>artifacts.jar</code>, <code>content.jar</code>, <code>plugins/</code> (plugin JAR), <code>features/</code> (feature JAR). This is the standard format Eclipse uses for software installation.
+</div>
+
+<div class="step">
+    <strong>5. GitHub Pages Deployment</strong><br>
+    The workflow deploys the p2 repository to <code>https://akivamishan.github.io/sap-mcp-server/</code>. A <code>.nojekyll</code> file ensures GitHub Pages serves the JAR files correctly. An <code>index.html</code> landing page provides human-readable installation instructions.
+</div>
+
+<div class="step">
+    <strong>6. Eclipse Installation</strong><br>
+    Users install the plugin via Help &gt; Install New Software &gt; add URL <code>https://akivamishan.github.io/sap-mcp-server/</code>. Eclipse downloads and installs the feature and plugin JARs from the p2 site.
+</div>
+
+<h2>Installation</h2>
+
+<div class="box">
+    <h3>MCP Server</h3>
+    <ol>
+        <li><code>npm install</code></li>
+        <li>Set <code>SAP_ADT_URL</code> in <code>.env</code></li>
+        <li>Configure Claude Desktop or Claude Code to use <code>node src/index.js</code></li>
+    </ol>
+
+    <h3>Eclipse Plugin</h3>
+    <p><strong>p2 update site (recommended):</strong></p>
+    <ol>
+        <li>In Eclipse: Help &gt; Install New Software</li>
+        <li>Add URL: <code>https://akivamishan.github.io/sap-mcp-server/</code></li>
+        <li>Select "Eclipse ADT Bridge for MCP" and install</li>
+        <li>Restart Eclipse</li>
+    </ol>
+    <p><strong>Manual:</strong> Copy JAR from <code>eclipse-adt-bridge/build/release/</code> to Eclipse's <code>dropins/</code> folder, then restart Eclipse.</p>
+
+    <h3>Verification</h3>
+    <pre><code>curl http://$(ip route | grep default | awk '{print $3}'):19456/health</code></pre>
+    <p>Expected: <code>{"status":"ok","plugin":"io.github.akivamishan.adtbridge","version":"1.0.1",...}</code></p>
+</div>
+
+<h2>Build &amp; Deploy (Quick Reference)</h2>
+
+<pre><code># Build plugin locally (requires Eclipse ADT JARs in ~/.p2/pool/plugins/)
+bash eclipse-adt-bridge/build.sh
+
+# Copy to release dir and commit
+cp eclipse-adt-bridge/build/io.github.akivamishan.adtbridge_1.0.1.jar eclipse-adt-bridge/build/release/
+git add eclipse-adt-bridge/build/release/ &amp;&amp; git commit
+
+# Tag and push to trigger GitHub Actions → p2 site → GitHub Pages
+git tag v1.0.1 &amp;&amp; git push --tags
+
+# Verify health (from WSL2):
 curl http://$(ip route | grep default | awk '{print $3}'):19456/health</code></pre>
 
 <hr>
-<p><em>Last updated: 2026-02-10</em></p>
+<p><em>Last updated: 2026-02-11</em></p>
 
 </body>
 </html>
