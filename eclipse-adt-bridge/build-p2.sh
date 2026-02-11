@@ -159,6 +159,43 @@ fi
 
 rm -rf "$STAGING_DIR"
 
+# ── Generate GitHub Pages files ──────────────────────────────────
+
+touch "$OUTPUT_DIR/.nojekyll"
+
+cat > "$OUTPUT_DIR/index.html" << 'HTMLEOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Eclipse ADT Bridge – p2 Update Site</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; line-height: 1.6; color: #333; }
+        h1 { font-size: 1.4rem; }
+        code { background: #f4f4f4; padding: 0.15em 0.4em; border-radius: 3px; font-size: 0.9em; }
+        .url { word-break: break-all; }
+        ol li { margin-bottom: 0.5rem; }
+    </style>
+</head>
+<body>
+    <h1>Eclipse ADT Bridge – p2 Update Site</h1>
+    <p>This is an Eclipse p2 repository for the <strong>ADT Bridge</strong> plugin (v1.0.0), which runs an HTTP bridge inside Eclipse to expose SAP ADT APIs to external tools.</p>
+    <h2>Installation</h2>
+    <ol>
+        <li>In Eclipse, go to <strong>Help &gt; Install New Software…</strong></li>
+        <li>Click <strong>Add…</strong> and paste this URL:<br><code class="url">https://akivamishan.github.io/sap-mcp-server/</code></li>
+        <li>Select <strong>ADT Bridge Feature</strong> and finish the wizard.</li>
+        <li>Restart Eclipse when prompted.</li>
+    </ol>
+    <h2>More Info</h2>
+    <p><a href="https://github.com/akivamishan/sap-mcp-server">GitHub Repository</a></p>
+</body>
+</html>
+HTMLEOF
+
+echo "Generated index.html and .nojekyll"
+
 # ── Verify output ────────────────────────────────────────────────
 
 echo ""
