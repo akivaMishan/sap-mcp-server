@@ -53,7 +53,67 @@ Key classes:
 - `AdtConnectionManager` — Finds the first open ABAP project in the Eclipse workspace, creates REST resources using `AdtRestResourceFactory`, handles session management (enqueue/stateful/stateless). All methods (GET/POST/PUT/DELETE) are proxied via REST resources.
 - `EarlyStartup` — `IStartup` implementation that starts the bridge on Eclipse boot
 
-Build requires JDK 21+ and Eclipse ADT plugin JARs from the p2 pool (`~/.p2/pool/plugins/`).
+Build requires JDK 11+ and Eclipse ADT plugin JARs from the p2 pool (`~/.p2/pool/plugins/`).
+
+## Repository Structure
+
+```
+sap-mcp-server/
+├── src/
+│   ├── index.js                  — MCP server entry point, tool registration
+│   └── sap-adt-client.js         — HTTP client, bridge detection, ADT API logic
+├── eclipse-adt-bridge/
+│   ├── src/.../adtbridge/        — 6 Java source files (plugin)
+│   ├── META-INF/MANIFEST.MF      — OSGi bundle manifest
+│   ├── plugin.xml                — Eclipse startup extension point
+│   ├── feature/feature.xml       — p2 feature definition
+│   ├── build.sh                  — Local JAR build script
+│   ├── build-p2.sh               — p2 repository builder
+│   └── build/release/            — Pre-built JAR (committed for CI)
+├── .github/workflows/
+│   └── build-update-site.yml     — CI: build p2 site → deploy to GitHub Pages
+├── docs/
+│   ├── architecture.html         — Visual architecture documentation
+│   └── capture-eclipse-traffic.md
+├── package.json
+└── .env                          — SAP_ADT_URL, optional BRIDGE_URL
+```
+
+## Build Pipeline
+
+The plugin build is split between local and CI because SAP ADT plugin JARs (e.g., `com.sap.adt.communication`) are proprietary and only available in a local Eclipse installation's p2 pool. CI runners don't have them.
+
+1. **Local build** (`eclipse-adt-bridge/build.sh`): Compiles Java sources against Eclipse ADT JARs from `~/.p2/pool/plugins/`, produces an OSGi bundle JAR.
+2. **Commit pre-built JAR** to `eclipse-adt-bridge/build/release/` — this is the CI input.
+3. **Git tag** (`v*`) or manual workflow dispatch triggers GitHub Actions.
+4. **GitHub Actions** (`build-update-site.yml`): Downloads Eclipse SDK, runs `build-p2.sh` with the pre-built JAR, produces a p2 update site repository.
+5. **GitHub Pages** deploys the p2 repository to `https://akivamishan.github.io/sap-mcp-server/`.
+
+## Installation
+
+### MCP Server
+
+1. `npm install`
+2. Set `SAP_ADT_URL` in `.env`
+3. Configure Claude Desktop or Claude Code to use `node src/index.js` (see [Running on Windows](#running-on-windows-with-claude-desktop) below)
+
+### Eclipse Plugin
+
+- **p2 update site (recommended):** In Eclipse, go to Help > Install New Software, add the URL `https://akivamishan.github.io/sap-mcp-server/`, and install the "Eclipse ADT Bridge for MCP" feature.
+- **Manual:** Copy the JAR from `eclipse-adt-bridge/build/release/` to your Eclipse `dropins/` folder and restart Eclipse.
+
+### Verification
+
+```bash
+curl http://$(ip route | grep default | awk '{print $3}'):19456/health
+```
+
+## GitHub Pages
+
+- **URL:** `https://akivamishan.github.io/sap-mcp-server/`
+- **Serves:** p2 update site (`artifacts.jar`, `content.jar`, plugin JAR, feature JAR) plus a landing page (`index.html`).
+- Eclipse consumes it via Help > Install New Software.
+- Deployed by the `build-update-site.yml` workflow on `v*` tags or manual dispatch.
 
 ## Configuration
 
