@@ -1,4 +1,4 @@
-package com.sap.adt.mcpbridge;
+package io.github.akivamishan.adtbridge;
 
 import java.io.IOException;
 import java.util.Map;

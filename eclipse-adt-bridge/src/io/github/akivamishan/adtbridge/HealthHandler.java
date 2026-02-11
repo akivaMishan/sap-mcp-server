@@ -1,4 +1,4 @@
-package com.sap.adt.mcpbridge;
+package io.github.akivamishan.adtbridge;
 
 import java.io.IOException;
 
@@ -28,7 +28,7 @@ public class HealthHandler implements HttpHandler {
 
         JsonObject response = new JsonObject();
         response.addProperty("status", "ok");
-        response.addProperty("plugin", "com.sap.adt.mcpbridge");
+        response.addProperty("plugin", "io.github.akivamishan.adtbridge");
         response.addProperty("version", "1.0.0");
 
         // Check if we can find an ADT project

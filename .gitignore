@@ -1,4 +1,5 @@
 node_modules/
 .env
 .claude/
-eclipse-adt-bridge/build/
+eclipse-adt-bridge/build/*
+!eclipse-adt-bridge/build/release/

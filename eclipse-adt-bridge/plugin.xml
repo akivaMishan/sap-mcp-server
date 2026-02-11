@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin>
    <extension point="org.eclipse.ui.startup">
-      <startup class="com.sap.adt.mcpbridge.EarlyStartup"/>
+      <startup class="io.github.akivamishan.adtbridge.EarlyStartup"/>
    </extension>
 </plugin>

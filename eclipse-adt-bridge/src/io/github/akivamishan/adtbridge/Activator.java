@@ -1,4 +1,4 @@
-package com.sap.adt.mcpbridge;
+package io.github.akivamishan.adtbridge;
 
 import org.eclipse.core.runtime.ILog;
 import org.eclipse.core.runtime.Platform;
@@ -7,7 +7,7 @@ import org.osgi.framework.BundleContext;
 
 public class Activator implements BundleActivator {
 
-    public static final String PLUGIN_ID = "com.sap.adt.mcpbridge";
+    public static final String PLUGIN_ID = "io.github.akivamishan.adtbridge";
 
     private static Activator instance;
     private static ILog logger;

@@ -1,0 +1,68 @@
+name: Build Eclipse Update Site
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Download Eclipse Platform SDK
+        run: |
+          ECLIPSE_URL="https://www.eclipse.org/downloads/download.php?file=/eclipse/downloads/drops4/R-4.34-202411201800/eclipse-SDK-4.34-linux-gtk-x86_64.tar.gz&r=1"
+          curl -L -o eclipse-sdk.tar.gz "$ECLIPSE_URL"
+          tar xzf eclipse-sdk.tar.gz
+          echo "ECLIPSE_HOME=$(pwd)/eclipse" >> "$GITHUB_ENV"
+
+      - name: Verify pre-built plugin JAR exists
+        run: |
+          JAR="eclipse-adt-bridge/build/release/io.github.akivamishan.adtbridge_1.0.0.jar"
+          if [ ! -f "$JAR" ]; then
+            echo "ERROR: Pre-built plugin JAR not found at $JAR"
+            echo "Build locally with build.sh and commit the JAR to build/release/"
+            exit 1
+          fi
+          echo "Found plugin JAR: $(ls -la "$JAR")"
+
+      - name: Build p2 repository
+        run: bash eclipse-adt-bridge/build-p2.sh
+
+      - name: Upload p2 repository artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: eclipse-adt-bridge/build/p2-repository
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

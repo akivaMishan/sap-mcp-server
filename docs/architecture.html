@@ -203,7 +203,7 @@ async ensureBridgeChecked() {
 <div class="box purple">
     <p><strong>Location:</strong> <code>/home/akiva/personal/sap-mcp-server/eclipse-adt-bridge/</code></p>
     <p><strong>Deployed To:</strong> <code>C:\Users\akivo\eclipse\java-2025-12\eclipse\dropins\</code></p>
-    <p><strong>JAR Name:</strong> <code>com.sap.adt.mcpbridge_1.0.0.jar</code></p>
+    <p><strong>JAR Name:</strong> <code>io.github.akivamishan.adtbridge_1.0.0.jar</code></p>
 
     <h4>Complete File Tree</h4>
     <pre><code>eclipse-adt-bridge/
@@ -211,7 +211,7 @@ async ensureBridgeChecked() {
 &#x2502;   &#x2514;&#x2500;&#x2500; MANIFEST.MF              # OSGi bundle manifest
 &#x251C;&#x2500;&#x2500; plugin.xml                   # Eclipse extension point (early startup)
 &#x251C;&#x2500;&#x2500; build.sh                     # Build &amp; deploy script (run from WSL)
-&#x251C;&#x2500;&#x2500; src/com/sap/adt/mcpbridge/
+&#x251C;&#x2500;&#x2500; src/io/github/akivamishan/adtbridge/
 &#x2502;   &#x251C;&#x2500;&#x2500; Activator.java           # OSGi BundleActivator &mdash; starts/stops the HTTP server
 &#x2502;   &#x251C;&#x2500;&#x2500; EarlyStartup.java        # IStartup &mdash; forces bundle activation on Eclipse boot
 &#x2502;   &#x251C;&#x2500;&#x2500; BridgeHttpServer.java    # HTTP server on 0.0.0.0:19456
@@ -221,7 +221,7 @@ async ensureBridgeChecked() {
 &#x2514;&#x2500;&#x2500; build/                       # Build output (generated)
     &#x251C;&#x2500;&#x2500; classes/                 # Compiled .class files + copied metadata
     &#x251C;&#x2500;&#x2500; sources.txt              # Source file list (for Windows javac)
-    &#x2514;&#x2500;&#x2500; com.sap.adt.mcpbridge_1.0.0.jar  # Deployable plugin JAR (~15KB)</code></pre>
+    &#x2514;&#x2500;&#x2500; io.github.akivamishan.adtbridge_1.0.0.jar  # Deployable plugin JAR (~15KB)</code></pre>
 
     <!-- ═══════════ Java Source Files ═══════════ -->
 
@@ -302,10 +302,10 @@ async ensureBridgeChecked() {
     <p><strong>META-INF/MANIFEST.MF</strong> &mdash; OSGi bundle manifest:</p>
     <pre><code>Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SAP ADT MCP Bridge
-Bundle-SymbolicName: com.sap.adt.mcpbridge;singleton:=true
+Bundle-Name: Eclipse ADT Bridge for MCP
+Bundle-SymbolicName: io.github.akivamishan.adtbridge;singleton:=true
 Bundle-Version: 1.0.0
-Bundle-Activator: com.sap.adt.mcpbridge.Activator
+Bundle-Activator: io.github.akivamishan.adtbridge.Activator
 Bundle-ActivationPolicy: lazy
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.core.resources,
@@ -319,7 +319,7 @@ Require-Capability: osgi.ee;filter:="(&amp;(osgi.ee=JavaSE)(version=21))"</code>
 
     <p>Key declarations:</p>
     <ul>
-        <li><code>Bundle-SymbolicName: com.sap.adt.mcpbridge;singleton:=true</code> &mdash; unique plugin identity</li>
+        <li><code>Bundle-SymbolicName: io.github.akivamishan.adtbridge;singleton:=true</code> &mdash; unique plugin identity</li>
         <li><code>Bundle-Activator</code> &mdash; points to <code>Activator</code> class for lifecycle callbacks</li>
         <li><code>Bundle-ActivationPolicy: lazy</code> &mdash; bundle is loaded on demand (until <code>EarlyStartup</code> forces it)</li>
         <li><code>Require-Bundle</code> &mdash; 8 dependencies: Eclipse core (3), SAP ADT (4), Google Gson (1)</li>
@@ -330,7 +330,7 @@ Require-Capability: osgi.ee;filter:="(&amp;(osgi.ee=JavaSE)(version=21))"</code>
     <pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
 &lt;plugin&gt;
    &lt;extension point="org.eclipse.ui.startup"&gt;
-      &lt;startup class="com.sap.adt.mcpbridge.EarlyStartup"/&gt;
+      &lt;startup class="io.github.akivamishan.adtbridge.EarlyStartup"/&gt;
    &lt;/extension&gt;
 &lt;/plugin&gt;</code></pre>
 
@@ -412,7 +412,7 @@ Eclipse starts
 
     <div class="step">
         <strong>Step 4: Packaging</strong><br>
-        Copies <code>META-INF/MANIFEST.MF</code> and <code>plugin.xml</code> into the classes directory. Creates <code>com.sap.adt.mcpbridge_1.0.0.jar</code> using <code>jar cfm</code> (with fallbacks to <code>zip</code> or <code>jar.exe</code>).
+        Copies <code>META-INF/MANIFEST.MF</code> and <code>plugin.xml</code> into the classes directory. Creates <code>io.github.akivamishan.adtbridge_1.0.0.jar</code> using <code>jar cfm</code> (with fallbacks to <code>zip</code> or <code>jar.exe</code>).
     </div>
 
     <div class="step">
@@ -477,7 +477,7 @@ Eclipse starts
             <td>8 class files: 6 main classes + <code>AdtConnectionManager$ProxyResponse</code> (inner class) + <code>AdtConnectionManager$1</code> (anonymous <code>IRestResourceResponseFilter</code>)</td>
         </tr>
         <tr>
-            <td><code>build/com.sap.adt.mcpbridge_1.0.0.jar</code></td>
+            <td><code>build/io.github.akivamishan.adtbridge_1.0.0.jar</code></td>
             <td>Deployable OSGi plugin JAR (~15KB). Contains all class files, <code>META-INF/MANIFEST.MF</code>, and <code>plugin.xml</code>.</td>
         </tr>
         <tr>
@@ -486,7 +486,7 @@ Eclipse starts
         </tr>
     </table>
 
-    <p><strong>Deployment location:</strong> <code>C:\Users\akivo\eclipse\java-2025-12\eclipse\dropins\com.sap.adt.mcpbridge_1.0.0.jar</code></p>
+    <p><strong>Deployment location:</strong> <code>C:\Users\akivo\eclipse\java-2025-12\eclipse\dropins\io.github.akivamishan.adtbridge_1.0.0.jar</code></p>
 </div>
 
 <h3>4. SAP BTP ABAP Environment</h3>
@@ -879,7 +879,7 @@ const hostsToTry = ['localhost', '127.0.0.1'];
     </tr>
     <tr>
         <td>Bridge Plugin JAR</td>
-        <td><code>C:\Users\akivo\eclipse\java-2025-12\eclipse\dropins\com.sap.adt.mcpbridge_1.0.0.jar</code></td>
+        <td><code>C:\Users\akivo\eclipse\java-2025-12\eclipse\dropins\io.github.akivamishan.adtbridge_1.0.0.jar</code></td>
     </tr>
     <tr>
         <td>Eclipse Installation</td>

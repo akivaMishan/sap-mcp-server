@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build script for SAP ADT MCP Bridge Eclipse Plugin
+# Build script for Eclipse ADT Bridge Plugin
 # Run from WSL: bash build.sh
 set -e
 
@@ -14,7 +14,7 @@ DROPINS="/mnt/c/Users/akivo/eclipse/java-2025-12/eclipse/dropins"
 
 # Output
 OUTPUT_DIR="$SCRIPT_DIR/build"
-JAR_NAME="com.sap.adt.mcpbridge_1.0.0.jar"
+JAR_NAME="io.github.akivamishan.adtbridge_1.0.0.jar"
 
 # Detect if javac is Windows-side (.exe) — if so we need Windows paths
 WINDOWS_JAVAC=false
