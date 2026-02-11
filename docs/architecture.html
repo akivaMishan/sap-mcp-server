@@ -71,60 +71,71 @@
         .status-fail { color: #ea4335; font-weight: bold; }
         .status-partial { color: #f9ab00; font-weight: bold; }
         .arrow { color: #1a73e8; font-weight: bold; }
+        .step {
+            background: #fff;
+            border-left: 4px solid #1a73e8;
+            border-radius: 4px;
+            padding: 15px 20px;
+            margin: 10px 0;
+        }
+        .step strong { color: #1a73e8; }
+        .layer {
+            background: #fff;
+            border-left: 4px solid #34a853;
+            border-radius: 4px;
+            padding: 15px 20px;
+            margin: 10px 0;
+        }
+        .layer strong { color: #34a853; }
+        .code-ref { font-style: italic; color: #666; }
+        .gotcha {
+            background: #fef7e0;
+            border-left: 4px solid #f9ab00;
+            border-radius: 4px;
+            padding: 15px 20px;
+            margin: 10px 0;
+        }
+        .gotcha strong { color: #e65100; }
     </style>
 </head>
 <body>
 
 <h1>SAP MCP Server Architecture</h1>
 
-<h2>The Problem We're Solving</h2>
-
-<div class="box red">
-    <h3>Why Do We Need This?</h3>
-    <p><strong>OAuth2 tokens work for READING but FAIL for WRITING</strong></p>
-    <ul>
-        <li>SAP BTP trial accounts use OAuth2 (client credentials) for API access</li>
-        <li>OAuth2 grants authentication but <strong>not full authorization</strong></li>
-        <li>Write operations fail with: <code>403 - You are not authorized (S_DEVELOP)</code></li>
-        <li>The S_DEVELOP authorization object controls who can modify ABAP code</li>
-    </ul>
-    <p><strong>But Eclipse ADT CAN write!</strong> Because it uses SAML2 authentication that maps to user <code>CB9980003101</code> with the <code>SAP_BR_DEVELOPER</code> role.</p>
-</div>
-
 <h2>Architecture Overview</h2>
 
 <div class="diagram">
-┌─────────────────────────────────────────────────────────────────────────────────────┐
-│                                    YOUR COMPUTER                                     │
-│                                                                                      │
-│  ┌─────────────┐      ┌─────────────────────┐      ┌─────────────────────────────┐  │
-│  │             │      │                     │      │      WINDOWS (Host)         │  │
-│  │   CLAUDE    │      │   WSL2 (Linux)      │      │                             │  │
-│  │   (AI)      │      │                     │      │  ┌─────────────────────┐    │  │
-│  │             │      │  ┌───────────────┐  │      │  │                     │    │  │
-│  │     │       │      │  │  MCP Server   │  │ HTTP │  │   Eclipse IDE       │    │  │
-│  │     │ MCP   │      │  │  (Node.js)    │──┼──────┼─▶│   + ADT Plugin      │    │  │
-│  │     ▼       │      │  │  Port: stdin  │  │:19456│  │   + Bridge Plugin   │    │  │
-│  │  ┌──────┐   │ MCP  │  └───────────────┘  │      │  │                     │    │  │
-│  │  │Claude│───┼──────┼─▶      │            │      │  └──────────┬──────────┘    │  │
-│  │  │ Code │   │proto │       │            │      │             │               │  │
-│  │  └──────┘   │      │       ▼            │      │             │               │  │
-│  │             │      │  sap-adt-client.js │      │             │ HTTPS         │  │
-│  └─────────────┘      └─────────────────────┘      └─────────────┼───────────────┘  │
-│                                                                  │                  │
-└──────────────────────────────────────────────────────────────────┼──────────────────┘
-                                                                   │
-                                                                   ▼
-                                                    ┌─────────────────────────────┐
-                                                    │   SAP BTP (Cloud)           │
-                                                    │                             │
-                                                    │   ABAP Environment          │
-                                                    │   User: CB9980003101        │
-                                                    │   Role: SAP_BR_DEVELOPER    │
-                                                    │                             │
-                                                    │   ADT REST APIs:            │
-                                                    │   /sap/bc/adt/...           │
-                                                    └─────────────────────────────┘
+&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+&#x2502;                                    YOUR COMPUTER                                     &#x2502;
+&#x2502;                                                                                      &#x2502;
+&#x2502;  &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;      &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;      &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;  &#x2502;
+&#x2502;  &#x2502;             &#x2502;      &#x2502;                     &#x2502;      &#x2502;      WINDOWS (Host)         &#x2502;  &#x2502;
+&#x2502;  &#x2502;   CLAUDE    &#x2502;      &#x2502;   WSL2 (Linux)      &#x2502;      &#x2502;                             &#x2502;  &#x2502;
+&#x2502;  &#x2502;   (AI)      &#x2502;      &#x2502;                     &#x2502;      &#x2502;  &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;    &#x2502;  &#x2502;
+&#x2502;  &#x2502;             &#x2502;      &#x2502;  &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;  &#x2502;      &#x2502;  &#x2502;                     &#x2502;    &#x2502;  &#x2502;
+&#x2502;  &#x2502;     &#x2502;       &#x2502;      &#x2502;  &#x2502;  MCP Server   &#x2502;  &#x2502; HTTP &#x2502;  &#x2502;   Eclipse IDE       &#x2502;    &#x2502;  &#x2502;
+&#x2502;  &#x2502;     &#x2502; MCP   &#x2502;      &#x2502;  &#x2502;  (Node.js)    &#x2502;&#x2500;&#x2500;&#x253C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x253C;&#x2500;&#x25B6;&#x2502;   + ADT Plugin      &#x2502;    &#x2502;  &#x2502;
+&#x2502;  &#x2502;     &#x25BC;       &#x2502;      &#x2502;  &#x2502;  Port: stdin  &#x2502;  &#x2502;:19456&#x2502;  &#x2502;   + Bridge Plugin   &#x2502;    &#x2502;  &#x2502;
+&#x2502;  &#x2502;  &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;   &#x2502; MCP  &#x2502;  &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;  &#x2502;      &#x2502;  &#x2502;                     &#x2502;    &#x2502;  &#x2502;
+&#x2502;  &#x2502;  &#x2502;Claude&#x2502;&#x2500;&#x2500;&#x2500;&#x253C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x253C;&#x2500;&#x25B6;      &#x2502;            &#x2502;      &#x2502;  &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x252C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;    &#x2502;  &#x2502;
+&#x2502;  &#x2502;  &#x2502; Code &#x2502;   &#x2502;proto &#x2502;       &#x2502;            &#x2502;      &#x2502;             &#x2502;               &#x2502;  &#x2502;
+&#x2502;  &#x2502;  &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;   &#x2502;      &#x2502;       &#x25BC;            &#x2502;      &#x2502;             &#x2502;               &#x2502;  &#x2502;
+&#x2502;  &#x2502;             &#x2502;      &#x2502;  sap-adt-client.js &#x2502;      &#x2502;             &#x2502; HTTPS         &#x2502;  &#x2502;
+&#x2502;  &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;      &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;      &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x253C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;  &#x2502;
+&#x2502;                                                                  &#x2502;                  &#x2502;
+&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x253C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+                                                                   &#x2502;
+                                                                   &#x25BC;
+                                                    &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+                                                    &#x2502;   SAP BTP (Cloud)           &#x2502;
+                                                    &#x2502;                             &#x2502;
+                                                    &#x2502;   ABAP Environment          &#x2502;
+                                                    &#x2502;   User: CB9980003101        &#x2502;
+                                                    &#x2502;   Role: SAP_BR_DEVELOPER    &#x2502;
+                                                    &#x2502;                             &#x2502;
+                                                    &#x2502;   ADT REST APIs:            &#x2502;
+                                                    &#x2502;   /sap/bc/adt/...           &#x2502;
+                                                    &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
 </div>
 
 <h2>Component Details</h2>
@@ -134,7 +145,7 @@
     <p><strong>Location:</strong> Your terminal</p>
     <p><strong>Role:</strong> Provides AI assistance for SAP development</p>
     <p><strong>Communication:</strong> Uses MCP (Model Context Protocol) to call tools</p>
-    <p>When you ask Claude to search SAP code or create a program, it calls MCP tools like <code>sap_search</code>, <code>sap_read_source</code>, <code>sap_create_program</code>.</p>
+    <p>When you ask Claude to search SAP code or create a program, it calls MCP tools like <code>sap_search</code>, <code>sap_read_source</code>, <code>sap_create_class</code>.</p>
 </div>
 
 <h3>2. MCP Server (Node.js)</h3>
@@ -142,40 +153,48 @@
     <p><strong>Location:</strong> <code>/home/akiva/personal/sap-mcp-server/</code> (WSL2)</p>
     <p><strong>Entry Point:</strong> <code>src/index.js</code></p>
     <p><strong>Main File:</strong> <code>src/sap-adt-client.js</code></p>
-    <p><strong>Role:</strong> Translates MCP tool calls into SAP ADT REST API requests</p>
+    <p><strong>Role:</strong> Translates MCP tool calls into SAP ADT REST API requests. All requests go through the Eclipse ADT Bridge &mdash; there is no fallback mode.</p>
 
     <h4>Key Logic in sap-adt-client.js:</h4>
     <pre><code>// On startup, checks if Eclipse Bridge is available
 async ensureBridgeChecked() {
-    // Try localhost, 127.0.0.1, then WSL gateway IP
-    const hostsToTry = ['localhost', '127.0.0.1', '172.20.208.1'];
+    // 1. If BRIDGE_URL env var is set, use it directly (skip auto-detection)
+    if (process.env.BRIDGE_URL) {
+        const resp = await axios.get(`${url}/health`, { timeout: 2000 });
+        if (resp.data?.status === 'ok') return true;
+    }
 
+    // 2. Try multiple hosts: localhost, 127.0.0.1
+    const hostsToTry = ['localhost', '127.0.0.1'];
+
+    // 3. Detect WSL2 and add gateway IPs dynamically
+    //    - /etc/resolv.conf nameserver
+    //    - ip route default gateway
     for (const host of hostsToTry) {
         const resp = await axios.get(`http://${host}:19456/health`);
-        if (resp.data?.status === 'ok') {
-            this.useEclipseBridge = true;  // Use bridge for ALL requests
-            return;
-        }
+        if (resp.data?.status === 'ok') return true;
     }
-    this.useEclipseBridge = false;  // Fallback to OAuth2 (read-only)
+
+    // No fallback — bridge is required
+    throw new Error('Eclipse ADT bridge not available');
 }</code></pre>
 
-    <h4>Two Operating Modes:</h4>
+    <h4>Session Strategy:</h4>
     <table>
         <tr>
-            <th>Mode</th>
-            <th>When Used</th>
-            <th>Capabilities</th>
+            <th>HTTP Method</th>
+            <th>Session Type</th>
+            <th>Why</th>
         </tr>
         <tr>
-            <td><strong>Eclipse Bridge</strong></td>
-            <td>Eclipse is running with bridge plugin</td>
-            <td class="status-ok">Full read/write access</td>
+            <td><code>GET</code></td>
+            <td>Stateless</td>
+            <td>Avoids accidentally auto-locking objects (enqueue sessions lock on any access)</td>
         </tr>
         <tr>
-            <td><strong>OAuth2 Direct</strong></td>
-            <td>Eclipse not running or bridge unavailable</td>
-            <td class="status-partial">Read-only (writes fail with S_DEVELOP)</td>
+            <td><code>POST</code> / <code>PUT</code> / <code>DELETE</code></td>
+            <td>Enqueue</td>
+            <td>Shared session context so Lock &rarr; PUT &rarr; Unlock share the same lock</td>
         </tr>
     </table>
 </div>
@@ -186,21 +205,62 @@ async ensureBridgeChecked() {
     <p><strong>Deployed To:</strong> <code>C:\Users\akivo\eclipse\java-2025-12\eclipse\dropins\</code></p>
     <p><strong>JAR Name:</strong> <code>com.sap.adt.mcpbridge_1.0.0.jar</code></p>
 
-    <h4>Plugin Structure:</h4>
+    <h4>Complete File Tree</h4>
     <pre><code>eclipse-adt-bridge/
-├── META-INF/
-│   └── MANIFEST.MF          # OSGi bundle configuration
-├── plugin.xml               # Eclipse extension point (early startup)
-├── src/com/sap/adt/mcpbridge/
-│   ├── Activator.java       # Bundle lifecycle, starts HTTP server
-│   ├── EarlyStartup.java    # Ensures plugin loads on Eclipse start
-│   ├── BridgeHttpServer.java # HTTP server on port 19456
-│   ├── HealthHandler.java   # GET /health endpoint
-│   ├── ProxyHandler.java    # POST /proxy endpoint
-│   └── AdtConnectionManager.java # Core: executes ADT requests
-└── build.sh                 # Build script for WSL</code></pre>
+&#x251C;&#x2500;&#x2500; META-INF/
+&#x2502;   &#x2514;&#x2500;&#x2500; MANIFEST.MF              # OSGi bundle manifest
+&#x251C;&#x2500;&#x2500; plugin.xml                   # Eclipse extension point (early startup)
+&#x251C;&#x2500;&#x2500; build.sh                     # Build &amp; deploy script (run from WSL)
+&#x251C;&#x2500;&#x2500; src/com/sap/adt/mcpbridge/
+&#x2502;   &#x251C;&#x2500;&#x2500; Activator.java           # OSGi BundleActivator &mdash; starts/stops the HTTP server
+&#x2502;   &#x251C;&#x2500;&#x2500; EarlyStartup.java        # IStartup &mdash; forces bundle activation on Eclipse boot
+&#x2502;   &#x251C;&#x2500;&#x2500; BridgeHttpServer.java    # HTTP server on 0.0.0.0:19456
+&#x2502;   &#x251C;&#x2500;&#x2500; HealthHandler.java       # GET /health endpoint
+&#x2502;   &#x251C;&#x2500;&#x2500; ProxyHandler.java        # POST /proxy endpoint
+&#x2502;   &#x2514;&#x2500;&#x2500; AdtConnectionManager.java # Core: finds ADT project, executes requests
+&#x2514;&#x2500;&#x2500; build/                       # Build output (generated)
+    &#x251C;&#x2500;&#x2500; classes/                 # Compiled .class files + copied metadata
+    &#x251C;&#x2500;&#x2500; sources.txt              # Source file list (for Windows javac)
+    &#x2514;&#x2500;&#x2500; com.sap.adt.mcpbridge_1.0.0.jar  # Deployable plugin JAR (~15KB)</code></pre>
 
-    <h4>HTTP Server Endpoints:</h4>
+    <!-- ═══════════ Java Source Files ═══════════ -->
+
+    <h4>Java Source Files</h4>
+
+    <table>
+        <tr>
+            <th>File</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>Activator.java</code></td>
+            <td>OSGi <code>BundleActivator</code>. Creates <code>BridgeHttpServer(19456)</code> in <code>start()</code>, stops it in <code>stop()</code>. Provides singleton access via <code>getInstance()</code>. Logging goes to both Eclipse <code>ILog</code> and stdout.</td>
+        </tr>
+        <tr>
+            <td><code>EarlyStartup.java</code></td>
+            <td>Implements <code>IStartup</code>, registered via <code>plugin.xml</code> on the <code>org.eclipse.ui.startup</code> extension point. Forces the lazy bundle to activate on Eclipse boot. The <code>earlyStartup()</code> method only logs a confirmation message &mdash; the real work happens in <code>Activator.start()</code>.</td>
+        </tr>
+        <tr>
+            <td><code>BridgeHttpServer.java</code></td>
+            <td>Creates a <code>com.sun.net.httpserver.HttpServer</code> bound to <code>0.0.0.0:19456</code>. Registers <code>/health</code> and <code>/proxy</code> context handlers. Provides static utility methods <code>readRequestBody()</code> and <code>sendResponse()</code> used by both handlers. Uses the default executor (<code>null</code>).</td>
+        </tr>
+        <tr>
+            <td><code>HealthHandler.java</code></td>
+            <td><code>HttpHandler</code> for <code>GET /health</code>. Returns JSON with <code>status</code>, <code>plugin</code>, <code>version</code>, and <code>project</code> (connection status from <code>AdtConnectionManager.getProjectStatus()</code>). Supports CORS preflight. Returns 405 for non-GET methods.</td>
+        </tr>
+        <tr>
+            <td><code>ProxyHandler.java</code></td>
+            <td><code>HttpHandler</code> for <code>POST /proxy</code>. Parses JSON body with fields: <code>method</code>, <code>path</code>, <code>headers</code>, <code>params</code>, <code>body</code>. Delegates to <code>AdtConnectionManager.executeRequest()</code>. Returns <code>{status, headers, body}</code> JSON. On exceptions, returns status 500 inside a 200 HTTP response. Supports CORS preflight.</td>
+        </tr>
+        <tr>
+            <td><code>AdtConnectionManager.java</code></td>
+            <td>Core class. Singleton (<code>INSTANCE</code> pattern). Finds the first open ABAP project in Eclipse workspace via <code>ResourcesPlugin</code>. Creates <code>IRestResource</code> instances &mdash; <strong>stateless for GET</strong>, <strong>enqueue for POST/PUT/DELETE</strong>. Captures response via an anonymous <code>IRestResourceResponseFilter</code>. Handles <code>ResourceException</code> for HTTP error status codes. Contains inner class <code>ProxyResponse</code> (status/headers/body) and generates 2 anonymous inner classes at compile time.</td>
+        </tr>
+    </table>
+
+    <!-- ═══════════ HTTP Server Endpoints ═══════════ -->
+
+    <h4>HTTP Server Endpoints</h4>
     <table>
         <tr>
             <th>Endpoint</th>
@@ -210,24 +270,223 @@ async ensureBridgeChecked() {
         <tr>
             <td><code>/health</code></td>
             <td>GET</td>
-            <td>Check if bridge is running, returns project status</td>
+            <td>Check if bridge is running, returns plugin info and ADT project connection status</td>
         </tr>
         <tr>
             <td><code>/proxy</code></td>
             <td>POST</td>
-            <td>Proxy SAP ADT requests through Eclipse's session</td>
+            <td>Proxy SAP ADT requests through Eclipse's authenticated session</td>
         </tr>
     </table>
 
-    <h4>Why This Works:</h4>
+    <p><strong>/proxy request body format:</strong></p>
+    <pre><code>{
+    "method": "GET|POST|PUT|DELETE",
+    "path": "/sap/bc/adt/...",
+    "headers": { "Accept": "text/plain", ... },
+    "params": { "lockHandle": "...", "_action": "LOCK", ... },
+    "body": "&lt;xml&gt;...&lt;/xml&gt;"
+}</code></pre>
+
+    <p><strong>/proxy response format:</strong></p>
+    <pre><code>{
+    "status": 200,
+    "headers": { "content-type": "text/plain", ... },
+    "body": "CLASS zcl_test DEFINITION PUBLIC..."
+}</code></pre>
+
+    <!-- ═══════════ Configuration Files ═══════════ -->
+
+    <h4>Configuration Files</h4>
+
+    <p><strong>META-INF/MANIFEST.MF</strong> &mdash; OSGi bundle manifest:</p>
+    <pre><code>Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: SAP ADT MCP Bridge
+Bundle-SymbolicName: com.sap.adt.mcpbridge;singleton:=true
+Bundle-Version: 1.0.0
+Bundle-Activator: com.sap.adt.mcpbridge.Activator
+Bundle-ActivationPolicy: lazy
+Require-Bundle: org.eclipse.core.runtime,
+ org.eclipse.core.resources,
+ org.eclipse.ui,
+ com.sap.adt.communication,
+ com.sap.adt.project,
+ com.sap.adt.destinations,
+ com.sap.adt.destinations.model,
+ com.google.gson
+Require-Capability: osgi.ee;filter:="(&amp;(osgi.ee=JavaSE)(version=21))"</code></pre>
+
+    <p>Key declarations:</p>
+    <ul>
+        <li><code>Bundle-SymbolicName: com.sap.adt.mcpbridge;singleton:=true</code> &mdash; unique plugin identity</li>
+        <li><code>Bundle-Activator</code> &mdash; points to <code>Activator</code> class for lifecycle callbacks</li>
+        <li><code>Bundle-ActivationPolicy: lazy</code> &mdash; bundle is loaded on demand (until <code>EarlyStartup</code> forces it)</li>
+        <li><code>Require-Bundle</code> &mdash; 8 dependencies: Eclipse core (3), SAP ADT (4), Google Gson (1)</li>
+        <li><code>Require-Capability</code> &mdash; enforces JavaSE 21+</li>
+    </ul>
+
+    <p><strong>plugin.xml</strong> &mdash; Eclipse extension point registration:</p>
+    <pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;plugin&gt;
+   &lt;extension point="org.eclipse.ui.startup"&gt;
+      &lt;startup class="com.sap.adt.mcpbridge.EarlyStartup"/&gt;
+   &lt;/extension&gt;
+&lt;/plugin&gt;</code></pre>
+
+    <p>This registers <code>EarlyStartup</code> on the <code>org.eclipse.ui.startup</code> extension point, which causes Eclipse to call <code>earlyStartup()</code> during workbench initialization &mdash; forcing the lazy bundle to activate.</p>
+
+    <!-- ═══════════ Plugin Lifecycle ═══════════ -->
+
+    <h4>Plugin Lifecycle (How It Loads on Eclipse Start)</h4>
+
+    <div class="diagram" style="font-size: 13px;">
+Eclipse starts
+    &#x2502;
+    &#x25BC;
+1. OSGi discovers JAR in dropins/
+    &#x2502;
+    &#x25BC;
+2. Reads MANIFEST.MF &rarr; registers bundle (lazy activation)
+    &#x2502;
+    &#x25BC;
+3. Reads plugin.xml &rarr; org.eclipse.ui.startup extension point
+    &#x2502;
+    &#x25BC;
+4. EarlyStartup.earlyStartup() called &rarr; forces bundle activation
+    &#x2502;
+    &#x25BC;
+5. Activator.start() runs
+    &#x2502;  &bull; Creates BridgeHttpServer(19456)
+    &#x2502;  &bull; server.start()
+    &#x2502;
+    &#x25BC;
+6. HTTP server listening on 0.0.0.0:19456
+   Endpoints: /health, /proxy
+    &#x2502;
+    &#x2502;  ... Eclipse running, bridge serving requests ...
+    &#x2502;
+    &#x25BC;
+7. Eclipse shutdown &rarr; Activator.stop() &rarr; server.stop(2)
+   (2-second graceful shutdown timeout)
+    </div>
+
+    <p><strong>Why lazy + EarlyStartup?</strong> OSGi's <code>lazy</code> policy means the bundle won't activate until something references it. Without <code>EarlyStartup</code>, nothing would reference the bridge plugin, and the HTTP server would never start. The <code>org.eclipse.ui.startup</code> extension point forces activation during workbench startup.</p>
+
+    <!-- ═══════════ How This Works ═══════════ -->
+
+    <h4>Why This Works</h4>
     <p>When you open an ABAP project in Eclipse:</p>
     <ol>
         <li>Eclipse authenticates via <strong>SAML2</strong> to SAP BTP</li>
         <li>SAP maps this to user <code>CB9980003101</code> with full developer permissions</li>
         <li>Eclipse maintains an <strong>authenticated HTTP session</strong> with cookies</li>
-        <li>Our bridge plugin uses this <strong>same session</strong> for API requests</li>
-        <li>Result: Bridge requests have the same permissions as Eclipse UI!</li>
+        <li>Our bridge plugin uses this <strong>same session</strong> for API requests via <code>AdtRestResourceFactory</code></li>
+        <li>Result: Bridge requests have the same permissions as the Eclipse UI</li>
     </ol>
+
+    <!-- ═══════════ Build Process ═══════════ -->
+
+    <h4>Build Process</h4>
+
+    <div class="gotcha">
+        <strong>Compilation is NOT automatic.</strong> You must manually run <code>bash eclipse-adt-bridge/build.sh</code> from WSL2 after any Java source changes. After building, Eclipse must be restarted to pick up the new JAR.
+    </div>
+
+    <p><strong>Build steps</strong> (all handled by <code>build.sh</code>):</p>
+
+    <div class="step">
+        <strong>Step 1: JDK Detection</strong><br>
+        Prefers WSL-native JDK 21+ (<code>javac</code> on PATH). Falls back to Windows-side JDK: Eclipse JustJ (<code>org.eclipse.justj.openjdk.hotspot.jre.full.win32.x86_64_*/jre/bin/javac.exe</code>) or Eclipse Adoptium (<code>C:\Program Files\Eclipse Adoptium\jdk-2*\bin\javac.exe</code>). Sets <code>WINDOWS_JAVAC=true</code> if using a Windows JDK (affects path conversion and classpath separators).
+    </div>
+
+    <div class="step">
+        <strong>Step 2: Classpath Resolution</strong><br>
+        Resolves 16 JARs from the Eclipse p2 pool (<code>~/.p2/pool/plugins/</code>). Uses glob matching (e.g., <code>org.eclipse.core.runtime_*.jar</code>) since JAR filenames include version numbers. Classpath separator is <code>;</code> for Windows javac, <code>:</code> for Linux javac.
+    </div>
+
+    <div class="step">
+        <strong>Step 3: Compilation</strong><br>
+        <code>javac -source 21 -target 21</code> compiles all 6 <code>.java</code> files to <code>build/classes/</code>. For Windows javac, source paths are converted to Windows format via <code>wslpath -w</code> and passed through a <code>@sources.txt</code> argfile.
+    </div>
+
+    <div class="step">
+        <strong>Step 4: Packaging</strong><br>
+        Copies <code>META-INF/MANIFEST.MF</code> and <code>plugin.xml</code> into the classes directory. Creates <code>com.sap.adt.mcpbridge_1.0.0.jar</code> using <code>jar cfm</code> (with fallbacks to <code>zip</code> or <code>jar.exe</code>).
+    </div>
+
+    <div class="step">
+        <strong>Step 5: Deployment</strong><br>
+        Copies the JAR to Eclipse's <code>dropins/</code> folder: <code>C:\Users\akivo\eclipse\java-2025-12\eclipse\dropins\</code>
+    </div>
+
+    <div class="step">
+        <strong>Step 6: Restart Eclipse</strong><br>
+        Required for OSGi to discover and load the new bundle. There is no hot-reload &mdash; a full Eclipse restart is needed.
+    </div>
+
+    <!-- ═══════════ Required Dependencies ═══════════ -->
+
+    <h4>Required Dependencies (from p2 Pool)</h4>
+
+    <p>The build resolves 16 JARs from <code>C:\Users\akivo\.p2\pool\plugins\</code>:</p>
+
+    <table>
+        <tr>
+            <th>Category</th>
+            <th>JAR Pattern</th>
+        </tr>
+        <tr>
+            <td rowspan="8"><strong>Eclipse Core</strong></td>
+            <td><code>org.eclipse.core.runtime_*</code></td>
+        </tr>
+        <tr><td><code>org.eclipse.core.resources_*</code></td></tr>
+        <tr><td><code>org.eclipse.core.filesystem_*</code></td></tr>
+        <tr><td><code>org.eclipse.core.jobs_*</code></td></tr>
+        <tr><td><code>org.eclipse.equinox.common_*</code></td></tr>
+        <tr><td><code>org.eclipse.osgi_*</code></td></tr>
+        <tr><td><code>org.eclipse.ui_*</code></td></tr>
+        <tr><td><code>org.eclipse.ui.workbench_*</code></td></tr>
+        <tr>
+            <td rowspan="6"><strong>SAP ADT</strong></td>
+            <td><code>com.sap.adt.communication_*</code></td>
+        </tr>
+        <tr><td><code>com.sap.adt.project_*</code></td></tr>
+        <tr><td><code>com.sap.adt.destinations_*</code></td></tr>
+        <tr><td><code>com.sap.adt.destinations.model_*</code></td></tr>
+        <tr><td><code>com.sap.adt.logging_*</code></td></tr>
+        <tr><td><code>com.sap.adt.util_*</code></td></tr>
+        <tr>
+            <td rowspan="2"><strong>Third-party</strong></td>
+            <td><code>com.google.gson_*</code></td>
+        </tr>
+        <tr><td><code>org.eclipse.jface_*</code> (for <code>IStartup</code>)</td></tr>
+    </table>
+
+    <!-- ═══════════ Compiled Artifacts ═══════════ -->
+
+    <h4>Compiled Artifacts</h4>
+
+    <table>
+        <tr>
+            <th>Artifact</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>build/classes/*.class</code></td>
+            <td>8 class files: 6 main classes + <code>AdtConnectionManager$ProxyResponse</code> (inner class) + <code>AdtConnectionManager$1</code> (anonymous <code>IRestResourceResponseFilter</code>)</td>
+        </tr>
+        <tr>
+            <td><code>build/com.sap.adt.mcpbridge_1.0.0.jar</code></td>
+            <td>Deployable OSGi plugin JAR (~15KB). Contains all class files, <code>META-INF/MANIFEST.MF</code>, and <code>plugin.xml</code>.</td>
+        </tr>
+        <tr>
+            <td><code>build/sources.txt</code></td>
+            <td>Build artifact &mdash; list of source file paths (Windows format) used as javac argfile.</td>
+        </tr>
+    </table>
+
+    <p><strong>Deployment location:</strong> <code>C:\Users\akivo\eclipse\java-2025-12\eclipse\dropins\com.sap.adt.mcpbridge_1.0.0.jar</code></p>
 </div>
 
 <h3>4. SAP BTP ABAP Environment</h3>
@@ -269,6 +528,16 @@ async ensureBridgeChecked() {
             <td>POST</td>
         </tr>
         <tr>
+            <td>Activate object</td>
+            <td><code>/sap/bc/adt/activation</code></td>
+            <td>POST</td>
+        </tr>
+        <tr>
+            <td>Create class</td>
+            <td><code>/sap/bc/adt/oo/classes</code></td>
+            <td>POST</td>
+        </tr>
+        <tr>
             <td>Create program</td>
             <td><code>/sap/bc/adt/programs/programs</code></td>
             <td>POST</td>
@@ -276,7 +545,7 @@ async ensureBridgeChecked() {
     </table>
 </div>
 
-<h2>Request Flow (Detailed)</h2>
+<h2>Request Flow (Read)</h2>
 
 <div class="diagram">
 Example: Claude asks to read class ZCL_TEST
@@ -285,12 +554,12 @@ Example: Claude asks to read class ZCL_TEST
    Tool call: sap_read_source("class", "ZCL_TEST")
 
 2. MCP Server checks: Is Eclipse Bridge available?
-   GET http://172.20.208.1:19456/health
+   GET http://&lt;gateway-ip&gt;:19456/health
    Response: {"status":"ok","project":"connected:TRL_EN"}
    ✓ Bridge available!
 
 3. MCP Server ──HTTP──▶ Eclipse Bridge
-   POST http://172.20.208.1:19456/proxy
+   POST http://&lt;gateway-ip&gt;:19456/proxy
    Body: {
      "method": "GET",
      "path": "/sap/bc/adt/oo/classes/zcl_test/source/main",
@@ -299,7 +568,7 @@ Example: Claude asks to read class ZCL_TEST
 
 4. Eclipse Bridge (AdtConnectionManager.java):
    a) Gets Eclipse's authenticated session
-   b) Creates IRestResource with that session
+   b) Creates IRestResource with stateless session (GET = no auto-lock)
    c) Executes GET request
    d) Returns response
 
@@ -311,6 +580,89 @@ Example: Claude asks to read class ZCL_TEST
 
 7. Response flows back:
    SAP ──▶ Eclipse ──▶ Bridge ──▶ MCP Server ──▶ Claude
+</div>
+
+<h2>Create Class Flow (Step by Step)</h2>
+
+<p>This is what happens when Claude creates or updates an ABAP class via the <code>sap_create_class</code> tool.</p>
+
+<div class="step">
+    <strong>Step 1: Tool Call Received</strong><br>
+    <span class="code-ref">index.js:110&ndash;147 (schema), index.js:259&ndash;269 (handler)</span><br>
+    Claude Desktop sends an MCP <code>tools/call</code> request with name <code>sap_create_class</code>. The handler dispatches to <code>sapClient.createClass(args)</code>.
+</div>
+
+<div class="step">
+    <strong>Step 2: Name &amp; XML Preparation</strong><br>
+    <span class="code-ref">sap-adt-client.js:434&ndash;463</span><br>
+    The class name is uppercased and Z-prefixed if needed. An XML payload is built with <code>adtcore:abapLanguageVersion="cloudDevelopment"</code> (required on BTP trial). Default package is <code>Z_AI_TRIAL</code> (since <code>$TMP</code> doesn't support cloud language version).
+</div>
+
+<div class="step">
+    <strong>Step 3: Bridge Detection (first call only)</strong><br>
+    <span class="code-ref">sap-adt-client.js:22&ndash;80</span><br>
+    If not already cached, discovers the bridge: <code>BRIDGE_URL</code> env var &rarr; <code>localhost</code> &rarr; <code>127.0.0.1</code> &rarr; WSL2 gateway IP (from <code>/etc/resolv.conf</code> and <code>ip route</code>).
+</div>
+
+<div class="step">
+    <strong>Step 4: Bridge Request (POST create)</strong><br>
+    <span class="code-ref">sap-adt-client.js:82&ndash;100</span><br>
+    <code>bridgeRequest()</code> POSTs JSON to <code>{bridgeUrl}/proxy</code> with fields: <code>method</code>, <code>path</code>, <code>headers</code>, <code>body</code>, <code>params</code>.
+</div>
+
+<div class="step">
+    <strong>Step 5: ProxyHandler Parses Request</strong><br>
+    <span class="code-ref">ProxyHandler.java:18&ndash;76</span><br>
+    The bridge's HTTP handler parses the JSON, extracts method/path/headers/params/body, and calls <code>AdtConnectionManager.executeRequest()</code>.
+</div>
+
+<div class="step">
+    <strong>Step 6: Find ADT Project</strong><br>
+    <span class="code-ref">AdtConnectionManager.java:56&ndash;67, 81&ndash;97</span><br>
+    Finds the first open ABAP project in the Eclipse workspace and gets its <code>destinationId</code>.
+</div>
+
+<div class="step">
+    <strong>Step 7: Execute via REST Resource</strong><br>
+    <span class="code-ref">AdtConnectionManager.java:102&ndash;215</span><br>
+    Appends query params to URI. Creates an <strong>enqueue session</strong> (since this is a POST). Adds a response filter to capture status/headers/body. Calls <code>resource.post()</code>.
+</div>
+
+<div class="step">
+    <strong>Step 8: Eclipse &rarr; SAP BTP</strong><br>
+    <span class="code-ref">(Eclipse ADT communication layer)</span><br>
+    Eclipse's internal ADT layer sends the HTTPS request to SAP BTP with SAML2 cookies and a CSRF token, all managed internally.
+</div>
+
+<div class="step">
+    <strong>Step 9: Response Flows Back</strong><br>
+    SAP &rarr; Eclipse &rarr; response filter captures status/headers/body &rarr; ProxyHandler wraps as JSON &rarr; <code>bridgeRequest()</code> returns to <code>createClass()</code>.
+</div>
+
+<div class="step">
+    <strong>Step 10: Handle "Already Exists" (Upsert)</strong><br>
+    <span class="code-ref">sap-adt-client.js:491&ndash;501</span><br>
+    If SAP returns <strong>400</strong> with <code>ExceptionResourceAlreadyExists</code>, the create is skipped and we fall through to the update path (upsert behavior). A 403 is <strong>not</strong> treated as "already exists" &mdash; that's a real auth error.
+</div>
+
+<div class="step">
+    <strong>Step 11: Write Source (if provided)</strong><br>
+    <span class="code-ref">sap-adt-client.js:376&ndash;432</span><br>
+    <code>writeClassSource()</code> executes the full write sequence:
+    <div class="diagram" style="margin: 10px 0; padding: 15px; font-size: 13px;">
+Lock ──POST──▶ PUT source ──▶ Unlock ──POST──▶ Activate ──POST──▶
+  &#x2502;               &#x2502;               &#x2502;                  &#x2502;
+  &#x2502; lockHandle    &#x2502; lockHandle    &#x2502; (must unlock     &#x2502; activation
+  &#x2502; returned      &#x2502; as query     &#x2502;  BEFORE activate  &#x2502; with preaudit
+  &#x25BC;               &#x2502; param!       &#x25BC;  or 403 error)    &#x25BC;
+</div>
+    Lock handle is passed as a <strong>query parameter</strong>, not a header (Eclipse's <code>IRestResource.put()</code> doesn't forward custom headers).
+</div>
+
+<div class="step">
+    <strong>Step 12: Result Returned</strong><br>
+    <span class="code-ref">index.js:260&ndash;268</span><br>
+    A JSON result is returned to Claude Desktop with <code>success</code>, <code>action</code> ("created" or "updated"), <code>name</code>, <code>package</code>, and <code>sourceCodeWritten</code>.
 </div>
 
 <h2>Network Configuration (WSL2)</h2>
@@ -339,19 +691,21 @@ Example: Claude asks to read class ZCL_TEST
     </table>
 
     <h3>How MCP Server Finds Eclipse</h3>
-    <pre><code>// sap-adt-client.js tries these hosts in order:
-const hostsToTry = [
-    'localhost',           // Works if WSL1 or port forwarding
-    '127.0.0.1',          // Same as localhost
-    '172.20.208.1'        // WSL2 gateway IP (Windows host)
-];
+    <pre><code>// sap-adt-client.js detection order:
 
-// Gateway IP is discovered from:
-// 1. /etc/resolv.conf (nameserver line)
-// 2. ip route (default gateway)</code></pre>
+// 1. BRIDGE_URL env var (explicit, skips auto-detection)
+if (process.env.BRIDGE_URL) { ... }
 
-    <p><strong>Current Gateway IP:</strong> <code>172.20.208.1</code></p>
-    <p><strong>Test Command:</strong> <code>curl http://172.20.208.1:19456/health</code></p>
+// 2. Try localhost and 127.0.0.1
+const hostsToTry = ['localhost', '127.0.0.1'];
+
+// 3. WSL2 gateway IPs (dynamically discovered)
+//    - nameserver from /etc/resolv.conf
+//    - default gateway from `ip route`
+//    Gateway IP changes on each WSL restart!</code></pre>
+
+    <p><strong>Gateway IP is dynamic</strong> &mdash; it changes each time WSL restarts. The auto-detection code discovers it at runtime.</p>
+    <p><strong>Test Command:</strong> <code>curl http://$(ip route | grep default | awk '{print $3}'):19456/health</code></p>
 </div>
 
 <h2>Current Status</h2>
@@ -365,7 +719,7 @@ const hostsToTry = [
     <tr>
         <td>Bridge Detection</td>
         <td class="status-ok">Working</td>
-        <td>MCP server finds Eclipse via gateway IP</td>
+        <td>Auto-detects via BRIDGE_URL, localhost, or WSL2 gateway IP</td>
     </tr>
     <tr>
         <td>Health Endpoint</td>
@@ -384,40 +738,124 @@ const hostsToTry = [
     </tr>
     <tr>
         <td>Create Objects (POST)</td>
-        <td class="status-fail">Failing</td>
-        <td>S_DEVELOP authorization error</td>
+        <td class="status-ok">Working</td>
+        <td>Classes and programs, with <code>cloudDevelopment</code> language version</td>
     </tr>
     <tr>
         <td>Write Source (PUT)</td>
-        <td class="status-fail">Failing</td>
-        <td>Reflection issues with IRestResource.put()</td>
+        <td class="status-ok">Working</td>
+        <td>Lock handle passed as query param; enqueue session for shared lock context</td>
+    </tr>
+    <tr>
+        <td>Activation (POST)</td>
+        <td class="status-ok">Working</td>
+        <td>Unlock before activate to avoid 403 "currently editing"</td>
     </tr>
 </table>
 
-<h2>The Remaining Challenge</h2>
+<h2>Key Technical Details</h2>
 
-<div class="box red">
-    <h3>Problem: PUT Method Not Exposed</h3>
-    <p>Eclipse's <code>IRestResource</code> interface exposes:</p>
-    <ul>
-        <li><code>get()</code> - for reading</li>
-        <li><code>post()</code> - for creating/actions</li>
-        <li><code>delete()</code> - for deleting</li>
-        <li><strong>NOT</strong> <code>put()</code> - needed for updating source code!</li>
-    </ul>
+<div class="gotcha">
+    <strong>Lock handles are query params, not headers.</strong><br>
+    Eclipse's <code>IRestResource.put()</code> does not forward custom headers like <code>X-sap-adt-lockhandle</code>. The lock handle must be passed via the <code>params</code> object, which gets appended as a query parameter.
+</div>
 
-    <h3>What We've Tried</h3>
-    <ol>
-        <li><strong>X-HTTP-Method-Override header:</strong> SAP doesn't recognize it (returns 405)</li>
-        <li><strong>Reflection to call internal put():</strong> Argument type mismatch errors</li>
-    </ol>
+<div class="gotcha">
+    <strong>Session strategy: GET stateless, POST/PUT/DELETE enqueue.</strong><br>
+    Enqueue sessions auto-lock any object accessed through them &mdash; even a GET. Using stateless sessions for reads prevents accidental locks. Write operations use enqueue sessions so that Lock &rarr; PUT &rarr; Unlock all share the same session context.
+</div>
 
-    <h3>Next Steps</h3>
-    <ul>
-        <li>Find the correct method signature for internal PUT</li>
-        <li>Or: Use Apache HttpClient directly with Eclipse's session cookies</li>
-        <li>Or: Find alternative ADT API that accepts POST for updates</li>
-    </ul>
+<div class="gotcha">
+    <strong>BTP trial requires <code>abapLanguageVersion="cloudDevelopment"</code>.</strong><br>
+    Without this attribute in the class creation XML, the <code>S_ABPLNGVS</code> auth check fails with 403. The <code>$TMP</code> package does not support cloud language version &mdash; use <code>Z_AI_TRIAL</code> instead.
+</div>
+
+<div class="gotcha">
+    <strong>SAP returns 400 (not 409) for duplicate objects.</strong><br>
+    The exception type is <code>ExceptionResourceAlreadyExists</code>, embedded in a 400 response body. Do <strong>not</strong> treat 403 as "already exists" &mdash; that is a real authorization error.
+</div>
+
+<div class="gotcha">
+    <strong>Unlock before activate.</strong><br>
+    Activation POST fails with 403 "currently editing" if the object is still locked. The correct write sequence is: Lock &rarr; PUT &rarr; Unlock &rarr; Activate.
+</div>
+
+<h2>How to Add a New Tool (e.g., Create Function Module)</h2>
+
+<p>Adding a new tool requires changes in <strong>two files</strong>. The Eclipse bridge needs <strong>no changes</strong> &mdash; it's a generic proxy for any ADT path and method.</p>
+
+<div class="layer">
+    <strong>Layer 1: Tool Registration</strong> &mdash; <code>src/index.js</code><br><br>
+
+    <strong>a) Add the tool schema</strong> to the <code>tools</code> array in the <code>ListToolsRequestSchema</code> handler:<br>
+    <pre><code>{
+    name: 'sap_create_function_module',
+    description: 'Create a function module in a function group',
+    inputSchema: {
+        type: 'object',
+        properties: {
+            functionGroup: {
+                type: 'string',
+                description: 'Function group name',
+            },
+            name: {
+                type: 'string',
+                description: 'Function module name',
+            },
+            description: {
+                type: 'string',
+                description: 'Short description',
+            },
+        },
+        required: ['functionGroup', 'name'],
+    },
+}</code></pre>
+
+    <strong>b) Add the handler case</strong> in the <code>switch</code> statement in the <code>CallToolRequestSchema</code> handler:<br>
+    <pre><code>case 'sap_create_function_module': {
+    const result = await sapClient.createFunctionModule(args);
+    return {
+        content: [{
+            type: 'text',
+            text: JSON.stringify(result, null, 2),
+        }],
+    };
+}</code></pre>
+</div>
+
+<div class="layer">
+    <strong>Layer 2: Client Method</strong> &mdash; <code>src/sap-adt-client.js</code><br><br>
+
+    Add an <code>async</code> method that builds the correct ADT XML and calls the right endpoint:
+    <pre><code>async createFunctionModule({ functionGroup, name, description }) {
+    name = name.toUpperCase();
+    const group = functionGroup.toUpperCase();
+
+    const xmlBody = `&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;fmodule:functionModule
+    xmlns:fmodule="http://www.sap.com/adt/functions/fmodules"
+    xmlns:adtcore="http://www.sap.com/adt/core"
+    adtcore:name="${name}"
+    adtcore:description="${description || 'Created by MCP'}"&gt;
+&lt;/fmodule:functionModule&gt;`;
+
+    await this.postRequest(
+        `/sap/bc/adt/functions/groups/${group.toLowerCase()}/fmodules`,
+        xmlBody,
+        'application/xml',
+        'application/xml'
+    );
+
+    // For writes: follow Lock → PUT → Unlock → Activate
+    // (same pattern as writeClassSource)
+
+    return { success: true, name, functionGroup: group };
+}</code></pre>
+</div>
+
+<div class="layer">
+    <strong>Layer 3: Eclipse ADT Bridge</strong> &mdash; <strong>NO CHANGES NEEDED</strong><br><br>
+    The bridge is a generic HTTP proxy. It forwards <em>any</em> ADT path and method through Eclipse's internal APIs. No Java changes, no rebuild, no redeploy.
 </div>
 
 <h2>File Locations Summary</h2>
@@ -466,10 +904,10 @@ bash build.sh
 
 # Then restart Eclipse to load the new plugin
 # Test with:
-curl http://172.20.208.1:19456/health</code></pre>
+curl http://$(ip route | grep default | awk '{print $3}'):19456/health</code></pre>
 
 <hr>
-<p><em>Last updated: 2026-02-05</em></p>
+<p><em>Last updated: 2026-02-10</em></p>
 
 </body>
 </html>
