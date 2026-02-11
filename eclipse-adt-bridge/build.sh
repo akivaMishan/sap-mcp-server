@@ -9,9 +9,6 @@ cd "$SCRIPT_DIR"
 # Eclipse plugin pool directory
 P2_POOL="/mnt/c/Users/akivo/.p2/pool/plugins"
 
-# Eclipse dropins directory for deployment
-DROPINS="/mnt/c/Users/akivo/eclipse/java-2025-12/eclipse/dropins"
-
 # Output
 OUTPUT_DIR="$SCRIPT_DIR/build"
 JAR_NAME="io.github.akivamishan.adtbridge_1.0.0.jar"
@@ -230,14 +227,8 @@ echo ""
 echo "JAR contents:"
 unzip -l "$OUTPUT_DIR/$JAR_NAME" | grep "\.class\|MANIFEST\|plugin.xml"
 
-# Deploy to Eclipse dropins
-echo ""
-echo "Deploying to Eclipse dropins..."
-mkdir -p "$DROPINS"
-cp "$OUTPUT_DIR/$JAR_NAME" "$DROPINS/"
-echo "Deployed: $DROPINS/$JAR_NAME"
-
 echo ""
 echo "=== BUILD COMPLETE ==="
-echo "Restart Eclipse to load the plugin."
+echo "JAR: $OUTPUT_DIR/$JAR_NAME"
+echo "Install via p2 update site: https://akivamishan.github.io/sap-mcp-server/"
 echo "Test with: curl http://localhost:19456/health"
