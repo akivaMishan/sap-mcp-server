@@ -47,16 +47,6 @@ This server uses browser-based authentication with session cookies. You need to 
    Copy-Item .sap-cookies.json \\wsl$\Ubuntu\home\<user>\personal\sap-mcp-server\
    ```
 
-## Configuration
-
-The `.env` file contains:
-
-```env
-SAP_ADT_URL=https://<your-instance>.abap-web.us10.hana.ondemand.com
-```
-
-**Important:** Use the `abap-web` URL, not `abap` URL.
-
 ## Usage with Claude Desktop
 
 Add to your Claude Desktop config (`~/.config/claude/claude_desktop_config.json`):

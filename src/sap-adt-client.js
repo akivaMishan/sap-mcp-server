@@ -13,8 +13,6 @@ class SapAdtClient {
     loadConfig() {
         // Load environment variables
         require('dotenv').config({ path: path.join(__dirname, '..', '.env'), quiet: true });
-
-        this.baseUrl = process.env.SAP_ADT_URL || '';
     }
 
     // --- Eclipse Bridge Methods ---
@@ -141,7 +139,6 @@ class SapAdtClient {
                 return {
                     status: 'error',
                     mode: 'eclipse-bridge',
-                    url: this.baseUrl,
                     message: 'Eclipse ADT bridge not available. Start Eclipse with the ADT bridge plugin.',
                 };
             }
@@ -150,7 +147,6 @@ class SapAdtClient {
             return {
                 status: 'connected',
                 mode: 'eclipse-bridge',
-                url: this.baseUrl,
                 message: 'Connected via Eclipse ADT bridge (full read/write access)',
                 discoverySize: data.length,
             };
@@ -158,7 +154,6 @@ class SapAdtClient {
             return {
                 status: 'error',
                 mode: 'eclipse-bridge',
-                url: this.baseUrl,
                 message: error.message,
             };
         }
