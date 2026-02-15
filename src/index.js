@@ -179,6 +179,66 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                     required: ['name', 'description'],
                 },
             },
+            {
+                name: 'sap_create_function_group',
+                description: 'Create a Function Group in the SAP system. If it already exists, returns success. The function group is automatically activated.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        name: {
+                            type: 'string',
+                            description: 'Function group name (max 26 chars, must start with Z or Y). If not starting with Z, it will be prefixed automatically.',
+                        },
+                        description: {
+                            type: 'string',
+                            description: 'Short description of the function group',
+                        },
+                        package: {
+                            type: 'string',
+                            description: 'Package name (default: Z_AI_TRIAL, or $TMP if no transport)',
+                        },
+                        transport: {
+                            type: 'string',
+                            description: 'Transport request number. Omit for local objects ($TMP)',
+                        },
+                    },
+                    required: ['name', 'description'],
+                },
+            },
+            {
+                name: 'sap_create_function_module',
+                description: 'Create or update an ABAP Function Module. Automatically creates the parent Function Group if it doesn\'t exist. If the FM already exists, updates its source code. The FM is automatically activated.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        name: {
+                            type: 'string',
+                            description: 'Function module name (must start with Z or Y). If not starting with Z, Z_ will be prefixed automatically.',
+                        },
+                        description: {
+                            type: 'string',
+                            description: 'Short description of the function module',
+                        },
+                        functionGroup: {
+                            type: 'string',
+                            description: 'Parent function group name. If omitted, a function group with the same name as the FM is auto-created.',
+                        },
+                        package: {
+                            type: 'string',
+                            description: 'Package name (default: Z_AI_TRIAL, or $TMP if no transport)',
+                        },
+                        transport: {
+                            type: 'string',
+                            description: 'Transport request number. Omit for local objects ($TMP)',
+                        },
+                        sourceCode: {
+                            type: 'string',
+                            description: 'ABAP source code for the function module. If omitted, an empty FM is created.',
+                        },
+                    },
+                    required: ['name', 'description'],
+                },
+            },
         ],
     };
 });
@@ -275,6 +335,30 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                         {
                             type: 'text',
                             text: JSON.stringify(result, null, 2),
+                        },
+                    ],
+                };
+            }
+
+            case 'sap_create_function_group': {
+                const fgResult = await sapClient.createFunctionGroup(args);
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: JSON.stringify(fgResult, null, 2),
+                        },
+                    ],
+                };
+            }
+
+            case 'sap_create_function_module': {
+                const fmResult = await sapClient.createFunctionModule(args);
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: JSON.stringify(fmResult, null, 2),
                         },
                     ],
                 };

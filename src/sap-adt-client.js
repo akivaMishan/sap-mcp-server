@@ -511,6 +511,245 @@ class SapAdtClient {
         };
     }
 
+    async createFunctionGroup({ name, description, package: pkg, transport, language }) {
+        // Normalize name: uppercase, ensure starts with Z or Y
+        name = name.toUpperCase();
+        if (!name.startsWith('Z') && !name.startsWith('Y')) {
+            name = 'Z' + name;
+        }
+
+        // SAP limit for function group names is 26 characters
+        if (name.length > 26) {
+            throw new Error(`Function group name "${name}" exceeds 26 character limit (${name.length} chars)`);
+        }
+
+        pkg = (pkg || 'Z_AI_TRIAL').toUpperCase();
+        if (!transport) {
+            pkg = '$TMP';
+        }
+        language = (language || 'EN').toUpperCase();
+        description = description || 'Created by MCP';
+
+        let action = 'created';
+        try {
+            const xmlBody = `<?xml version="1.0" encoding="UTF-8"?>
+<group:functionGroup
+    xmlns:group="http://www.sap.com/adt/functions/groups"
+    xmlns:adtcore="http://www.sap.com/adt/core"
+    adtcore:description="${description}"
+    adtcore:language="${language}"
+    adtcore:name="${name}"
+    adtcore:type="FUGR/F"
+    adtcore:abapLanguageVersion="cloudDevelopment">
+  <adtcore:packageRef adtcore:name="${pkg}"/>
+</group:functionGroup>`;
+
+            const params = {};
+            if (transport) {
+                params.corrNr = transport;
+            }
+
+            await this.postRequest(
+                '/sap/bc/adt/functions/groups',
+                xmlBody,
+                'application/vnd.sap.adt.functions.groups.v2+xml',
+                'application/vnd.sap.adt.functions.groups.v2+xml',
+                params
+            );
+
+            // Activate the newly created function group
+            const fgPath = `/sap/bc/adt/functions/groups/${name.toLowerCase()}`;
+            const activateXml = `<?xml version="1.0" encoding="UTF-8"?>
+<adtcore:objectReferences xmlns:adtcore="http://www.sap.com/adt/core">
+  <adtcore:objectReference adtcore:uri="${fgPath}" adtcore:name="${name}"/>
+</adtcore:objectReferences>`;
+
+            await this.postRequest(
+                '/sap/bc/adt/activation',
+                activateXml,
+                'application/xml',
+                'application/xml',
+                { method: 'activate', preauditRequested: 'true' }
+            );
+        } catch (error) {
+            const isAlreadyExists = error.response?.status === 400 &&
+                error.response?.data?.includes('AlreadyExists');
+            if (isAlreadyExists) {
+                action = 'already_existed';
+            } else {
+                throw error;
+            }
+        }
+
+        return {
+            success: true,
+            action,
+            name,
+            package: pkg,
+            transport: transport || null,
+            description,
+        };
+    }
+
+    async writeFunctionModuleSource(fgName, fmName, sourceCode, transport) {
+        const fmPath = `/sap/bc/adt/functions/groups/${fgName.toLowerCase()}/fmodules/${fmName.toLowerCase()}`;
+
+        // Lock the function module
+        const lockParams = { _action: 'LOCK', accessMode: 'MODIFY' };
+        if (transport) {
+            lockParams.corrNr = transport;
+        }
+        const lockResponse = await this.postRequest(
+            fmPath,
+            '',
+            'application/xml',
+            'application/vnd.sap.as.adt.lock.result.v1+xml',
+            lockParams
+        );
+
+        const lockXml = typeof lockResponse.data === 'string' ? lockResponse.data : '';
+        const lockHandleMatch = lockXml.match(/<LOCK_HANDLE>(.*?)<\/LOCK_HANDLE>/);
+        const lockHandle = lockHandleMatch ? lockHandleMatch[1] : '';
+
+        try {
+            await this.putRequest(
+                `${fmPath}/source/main`,
+                sourceCode,
+                'text/plain',
+                'text/plain',
+                lockHandle ? { lockHandle } : {}
+            );
+        } finally {
+            // Unlock before activation
+            const unlockParams = { _action: 'UNLOCK' };
+            if (lockHandle) {
+                unlockParams.lockHandle = lockHandle;
+            }
+            await this.postRequest(
+                fmPath,
+                '',
+                'application/xml',
+                '*/*',
+                unlockParams
+            );
+        }
+
+        // Activate after unlocking
+        const activateXml = `<?xml version="1.0" encoding="UTF-8"?>
+<adtcore:objectReferences xmlns:adtcore="http://www.sap.com/adt/core">
+  <adtcore:objectReference adtcore:uri="${fmPath}" adtcore:name="${fmName.toUpperCase()}"/>
+</adtcore:objectReferences>`;
+
+        await this.postRequest(
+            '/sap/bc/adt/activation',
+            activateXml,
+            'application/xml',
+            'application/xml',
+            { method: 'activate', preauditRequested: 'true' }
+        );
+    }
+
+    async createFunctionModule({ name, description, functionGroup, package: pkg, transport, sourceCode, language }) {
+        // Normalize FM name: uppercase, ensure starts with Z_ or Y_
+        name = name.toUpperCase();
+        if (!name.startsWith('Z') && !name.startsWith('Y')) {
+            name = 'Z_' + name;
+        }
+
+        pkg = (pkg || 'Z_AI_TRIAL').toUpperCase();
+        if (!transport) {
+            pkg = '$TMP';
+        }
+        language = (language || 'EN').toUpperCase();
+        description = description || 'Created by MCP';
+
+        // Resolve function group
+        let fgName;
+        if (functionGroup) {
+            fgName = functionGroup.toUpperCase();
+            if (!fgName.startsWith('Z') && !fgName.startsWith('Y')) {
+                fgName = 'Z' + fgName;
+            }
+        } else {
+            // Use FM name as FG name, truncated to 26 chars
+            fgName = name.length > 26 ? name.substring(0, 26) : name;
+        }
+
+        // Ensure the function group exists (createFunctionGroup handles "already exists" gracefully)
+        await this.createFunctionGroup({
+            name: fgName,
+            description: `Function group for ${name}`,
+            package: pkg,
+            transport,
+            language,
+        });
+
+        let action = 'created';
+        try {
+            const xmlBody = `<?xml version="1.0" encoding="UTF-8"?>
+<fmodule:functionModule
+    xmlns:fmodule="http://www.sap.com/adt/functions/fmodules"
+    xmlns:adtcore="http://www.sap.com/adt/core"
+    adtcore:description="${description}"
+    adtcore:language="${language}"
+    adtcore:name="${name}"
+    adtcore:type="FUGR/FM">
+</fmodule:functionModule>`;
+
+            const params = {};
+            if (transport) {
+                params.corrNr = transport;
+            }
+
+            await this.postRequest(
+                `/sap/bc/adt/functions/groups/${fgName.toLowerCase()}/fmodules`,
+                xmlBody,
+                'application/vnd.sap.adt.functions.fmodules.v3+xml',
+                'application/vnd.sap.adt.functions.fmodules.v3+xml',
+                params
+            );
+
+            // Activate the newly created function module
+            const fmPath = `/sap/bc/adt/functions/groups/${fgName.toLowerCase()}/fmodules/${name.toLowerCase()}`;
+            const activateXml = `<?xml version="1.0" encoding="UTF-8"?>
+<adtcore:objectReferences xmlns:adtcore="http://www.sap.com/adt/core">
+  <adtcore:objectReference adtcore:uri="${fmPath}" adtcore:name="${name}"/>
+</adtcore:objectReferences>`;
+
+            await this.postRequest(
+                '/sap/bc/adt/activation',
+                activateXml,
+                'application/xml',
+                'application/xml',
+                { method: 'activate', preauditRequested: 'true' }
+            );
+        } catch (error) {
+            const isAlreadyExists = error.response?.status === 400 &&
+                error.response?.data?.includes('AlreadyExists');
+            if (isAlreadyExists) {
+                action = 'updated';
+            } else {
+                throw error;
+            }
+        }
+
+        // Write source code if provided
+        if (sourceCode) {
+            await this.writeFunctionModuleSource(fgName, name, sourceCode, transport);
+        }
+
+        return {
+            success: true,
+            action,
+            name,
+            functionGroup: fgName,
+            package: pkg,
+            transport: transport || null,
+            description,
+            sourceCodeWritten: !!sourceCode,
+        };
+    }
+
     async getObjectInfo(uri) {
         if (!uri.startsWith('/')) {
             uri = '/' + uri;
