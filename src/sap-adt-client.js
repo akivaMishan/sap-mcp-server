@@ -524,6 +524,7 @@ class SapAdtClient {
         }
 
         pkg = (pkg || 'Z_AI_TRIAL').toUpperCase();
+        language = (language || 'EN').toUpperCase();
         description = description || 'Created by MCP';
 
         let action = 'created';
@@ -652,6 +653,7 @@ class SapAdtClient {
         }
 
         pkg = (pkg || 'Z_AI_TRIAL').toUpperCase();
+        language = (language || 'EN').toUpperCase();
         description = description || 'Created by MCP';
 
         // Resolve function group
