@@ -530,16 +530,15 @@ class SapAdtClient {
         let action = 'created';
         try {
             const xmlBody = `<?xml version="1.0" encoding="UTF-8"?>
-<group:functionGroup
+<group:abapFunctionGroup
     xmlns:group="http://www.sap.com/adt/functions/groups"
     xmlns:adtcore="http://www.sap.com/adt/core"
     adtcore:description="${description}"
-    adtcore:language="${language}"
     adtcore:name="${name}"
     adtcore:type="FUGR/F"
-    adtcore:abapLanguageVersion="cloudDevelopment">
+    adtcore:responsible="DEVELOPER">
   <adtcore:packageRef adtcore:name="${pkg}"/>
-</group:functionGroup>`;
+</group:abapFunctionGroup>`;
 
             const params = {};
             if (transport) {
@@ -549,8 +548,8 @@ class SapAdtClient {
             await this.postRequest(
                 '/sap/bc/adt/functions/groups',
                 xmlBody,
-                'application/vnd.sap.adt.functions.groups.v2+xml',
-                'application/vnd.sap.adt.functions.groups.v2+xml',
+                'application/*',
+                'application/*',
                 params
             );
 
@@ -681,14 +680,17 @@ class SapAdtClient {
         let action = 'created';
         try {
             const xmlBody = `<?xml version="1.0" encoding="UTF-8"?>
-<fmodule:functionModule
+<fmodule:abapFunctionModule
     xmlns:fmodule="http://www.sap.com/adt/functions/fmodules"
     xmlns:adtcore="http://www.sap.com/adt/core"
     adtcore:description="${description}"
-    adtcore:language="${language}"
     adtcore:name="${name}"
-    adtcore:type="FUGR/FM">
-</fmodule:functionModule>`;
+    adtcore:type="FUGR/FF">
+  <adtcore:containerRef
+      adtcore:name="${fgName}"
+      adtcore:type="FUGR/F"
+      adtcore:uri="/sap/bc/adt/functions/groups/${fgName.toLowerCase()}"/>
+</fmodule:abapFunctionModule>`;
 
             const params = {};
             if (transport) {
@@ -698,8 +700,8 @@ class SapAdtClient {
             await this.postRequest(
                 `/sap/bc/adt/functions/groups/${fgName.toLowerCase()}/fmodules`,
                 xmlBody,
-                'application/vnd.sap.adt.functions.fmodules.v3+xml',
-                'application/vnd.sap.adt.functions.fmodules.v3+xml',
+                'application/*',
+                'application/*',
                 params
             );
 
