@@ -524,9 +524,6 @@ class SapAdtClient {
         }
 
         pkg = (pkg || 'Z_AI_TRIAL').toUpperCase();
-        if (!transport) {
-            pkg = '$TMP';
-        }
         language = (language || 'EN').toUpperCase();
         description = description || 'Created by MCP';
 
@@ -657,9 +654,6 @@ class SapAdtClient {
         }
 
         pkg = (pkg || 'Z_AI_TRIAL').toUpperCase();
-        if (!transport) {
-            pkg = '$TMP';
-        }
         language = (language || 'EN').toUpperCase();
         description = description || 'Created by MCP';
 
